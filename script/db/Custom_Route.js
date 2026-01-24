@@ -5,11 +5,14 @@ module.exports = function (sequelize) {
     return sequelize.define("custom_routse", {
         Route_custom_ID: {
             primaryKey: true,
-            autoIncrement: true, // Исправлено на autoIncrement
+            autoIncrement: true,
             type: DataTypes.INTEGER
         },
         Tourist_ID: {
             type: DataTypes.INTEGER,
+        }, Guide_ID: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         },
         Route_Name: {
             type: DataTypes.STRING
@@ -28,6 +31,10 @@ module.exports = function (sequelize) {
         },
         Terrain_Type: {
             type: DataTypes.STRING
+        }, Route_Days: {  // Новое поле для количества дней
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            defaultValue: 1
         },
         WaiPoint1: {
             type: DataTypes.STRING
@@ -69,7 +76,14 @@ module.exports = function (sequelize) {
             type: DataTypes.STRING
         }, WaiPoint20: {
             type: DataTypes.STRING
+        }, Map_Zoom: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         },
+        Map_Center: {
+            type: DataTypes.STRING, // Будем хранить как "lat,lng"
+            allowNull: true
+        }
     }, {
         timestamps: false,
         tableName: 'custom_routse'

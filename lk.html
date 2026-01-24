@@ -16,7 +16,8 @@
         <div class="profile">
           <div class="avatar">{{ user.initial }}</div>
           <div class="name">{{ user.name }}</div>
-          <div class="role">{{ user.role === 'participant' ? 'Путешественник' : 'Гид' }}</div>
+          <div class="role">{{ user.role === "admin" ? "Администратор": user.role === 'participant' ? 'Путешественник' :
+            'Гид'}}</div>
         </div>
 
         <nav class="menu">
@@ -46,14 +47,14 @@
                   <li><a href="/trek" style="margin-left: 3em">Маршруты</a></li>
                 </div>
                 <button class="btn-login" style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%">
-                  <a href="/" @click.prevent="logout">Маршруты</a>
+                  <a href="/" @click.prevent="logout">Выход</a>
                 </button>
               </ul>
             </div>
           </div>
         </header>
 
-        <section>
+        <section v-if="activeMenu === 'Мои маршруты'">
           <h2 class="routesh2">Мои маршруты</h2>
           <div class="routes">
 
@@ -62,7 +63,11 @@
             </div>
 
             <div class="route-card" v-for="route in routes" :key="route.bookingId">
-              <p><strong>Дата:</strong> {{ formatDate(route.date) }}</p>
+              <button class="delete-btn" @click="deleteRoute(route)">&times;</button>
+              <p>
+                <strong>Дата:</strong>
+                <input type="date" v-model="route.date" class="date-picker" @change="updateRouteDate(route)">
+              </p>
               <p class="title">{{ route.title }}</p>
 
               <div class="map-placeholder"
@@ -78,6 +83,152 @@
             </div>
           </div>
         </section>
+
+        <section v-else-if="activeMenu === 'Группы'">
+          <h2 class="routesh2">Группы</h2>
+          <div class="groups">
+            <div v-if="userGroups.length === 0" class="empty-groups-container">
+              <img src="img/no_group.png" alt="Нет групп" class="empty-groups-img">
+              <p class="empty-groups-text">
+                Вы не состоите ни в одной из групп, чтобы добавиться в группу, нужно принять участие в готовом
+                маршруте
+              </p>
+            </div>
+
+            <div v-else>
+            </div>
+          </div>
+        </section>
+
+        <section v-else-if="activeMenu === 'Мои данные'">
+          <h2 class="routesh2">Мои данные</h2>
+
+          <div class="user-data-form-container">
+            <form @submit.prevent="saveUserData" class="profile-form">
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Имя</label>
+                  <input type="text" v-model="profileForm.First_Name" required>
+                </div>
+                <div class="form-group">
+                  <label>Фамилия</label>
+                  <input type="text" v-model="profileForm.Last_Name" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" v-model="profileForm.email" required readonly
+                  style="background-color: #f5f5f5; color: #666; cursor: not-allowed;">
+              </div>
+
+              <div class="form-group">
+                <label>Телефон</label>
+                <input type="text" v-model="profileForm.phone" @input="handlePhoneInput" maxlength="12">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Возраст</label>
+                  <input type="number" v-model="profileForm.age" min="16" max="80" @blur="handleAgeBlur"
+                    @input="handleAgeInput">
+                </div>
+                <div class="form-group" v-if="user.role === 'participant'">
+                  <label>Пол</label>
+                  <select v-model="profileForm.gender">
+                    <option value="Мужской">Мужской</option>
+                    <option value="Женский">Женский</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" v-if="user.role === 'organizer'">
+                <label>Лицензия гида</label>
+                <input type="file" ref="guideLicenseFile" accept=".pdf,.jpg,.jpeg,.png">
+                <p v-if="profileForm.Guide_License">Текущая лицензия: <a :href="profileForm.Guide_License"
+                    target="_blank">Просмотреть</a></p>
+                <div class="form-group">
+                  <label>Ссылка на группу VK</label>
+                  <input type="url" v-model="profileForm.link_vk_group" placeholder="https://vk.com/your_group"
+                    :class="{'input-error': !validateVk(profileForm.link_vk_group) && profileForm.link_vk_group}">
+                  <span v-if="!validateVk(profileForm.link_vk_group) && profileForm.link_vk_group" class="error-text">
+                    Некорректная ссылка VK
+                  </span>
+                </div>
+
+                <div class="form-group">
+                  <label>Ссылка на Telegram группу</label>
+                  <input type="url" v-model="profileForm.link_tg_group" placeholder="https://t.me/your_group"
+                    :class="{'input-error': !validateTg(profileForm.link_tg_group) && profileForm.link_tg_group}">
+                  <span v-if="!validateTg(profileForm.link_tg_group) && profileForm.link_tg_group" class="error-text">
+                    Некорректная ссылка Telegram
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Опыт</label>
+                <select v-model="profileForm.experience">
+                  <option value="Начинающий">Начинающий</option>
+                  <option value="Любитель">Любитель</option>
+                  <option value="Опытный">Опытный</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn-save">Сохранить изменения</button>
+            </form>
+          </div>
+        </section>
+
+        <section v-if="activeMenu === 'Маршруты на сайте'">
+          <h2 class="routesh2">Официальные маршруты сайта</h2>
+          <div class="admin-routes-grid">
+            <div v-for="route in allSystemRoutes.site" :key="route.Route_ID" class="route-card">
+              <div class="map-placeholder"
+                :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + route.Route_ID + ')', height: '150px', backgroundSize: 'cover' }">
+              </div>
+              <div class="card-content" style="padding: 15px;">
+                <h3>{{ route.Route_Name }}</h3>
+                <p>{{ (route.Route_Length / 1000).toFixed(2) }} км | {{ route.Route_Duration }}</p>
+                <div class="admin-actions" style="margin-top: 10px; display: flex; gap: 10px;">
+                  <button class="open-btn" @click="openRouteDetails(route.Route_ID, 'standard')">Открыть
+                    маршрут</button>
+                  <button class="delete-btn-admin" @click="deleteSiteRoute(route.Route_ID)"
+                    style="background: #ff4d4d; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">
+                    Убрать с сайта
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-else-if="activeMenu === 'Предложенные маршруты'">
+          <h2 class="routesh2">Маршруты на модерации</h2>
+          <div v-if="allSystemRoutes.proposed.length === 0" style="padding: 20px; text-align: center; color: gray;">
+            Нет маршрутов, ожидающих публикации.
+          </div>
+          <div class="admin-routes-grid">
+            <div v-for="route in allSystemRoutes.proposed" :key="route.Route_custom_ID" class="route-card">
+              <div class="card-content" style="padding: 15px;">
+                <h3>{{ route.Route_Name }}</h3>
+                <p>Автор ID: {{ route.Tourist_ID }}</p>
+                <p>Длина: {{ (route.Route_Length / 1000).toFixed(2) }} км</p>
+                <button class="open-btn" @click="openRouteDetails(route.Route_custom_ID, 'custom')">Открыть для
+                  проверки</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-else-if="activeMenu === 'Пользовательские маршруты'">
+          <h2 class="routesh2">Все пользовательские маршруты</h2>
+          <div style="padding: 20px; text-align: center; color: gray;">
+            Здесь пока пусто (отображение всех созданных пользователями маршрутов).
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -93,21 +244,37 @@
             role: "...",
             initial: "?",
           },
-          menu: ["Мои маршруты", "Моя группа", "Настройки профиля"],
+          menu: ["Мои маршруты", "Группы", "Мои данные"],
           activeMenu: "Мои маршруты",
           routes: [],
-          mobileMenuActive: false
+          mobileMenuActive: false,
+          userGroups: [],
+          link_vk_group: '',
+          link_tg_group: '',
+          allSystemRoutes: { standard: [], custom: [] },
+          profileForm: {
+            First_Name: '',
+            Last_Name: '',
+            email: '',
+            phone: '',
+            age: 0,
+            gender: '',
+            Guide_License: '',
+            experience: ''
+          }
         };
       },
       methods: {
         formatDuration(timeStr) {
           if (!timeStr) return '';
-          if (timeStr.toString().includes(':')) {
-            const parts = timeStr.split(':');
+          const str = timeStr.toString();
+          if (str.includes(':')) {
+            const parts = str.split(':');
             const decimal = parseInt(parts[0]) + (parseInt(parts[1]) / 60);
             return parseFloat(decimal.toFixed(1)) + ' часов';
+          } else {
+            return str + ' дней';
           }
-          return timeStr;
         },
         formatDate(dateStr) {
           if (!dateStr) return '';
@@ -122,12 +289,177 @@
           this.mobileMenuActive = !this.mobileMenuActive;
         },
         openRoute(route) {
-          // route.bookingId имеет вид "standard_5" или "custom_10"
           const parts = route.bookingId.split('_');
           const type = parts[0];
           const id = parts[1];
 
-          // Перенаправляем на планировщик с параметрами
+          window.location.href = `/scheduler?id=${id}&type=${type}`;
+        },
+        updateRouteDate(route) {
+          console.log(`Обновлена дата для маршрута ${route.bookingId}: ${route.date}`);
+        },
+        async deleteRoute(route) {
+          if (confirm('Вы уверены, что хотите удалить этот маршрут?')) {
+            try {
+              const response = await fetch('/api/delete-route', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: route.bookingId })
+              });
+              if (response.ok) {
+                this.routes = this.routes.filter(r => r.bookingId !== route.bookingId);
+              } else {
+                alert('Ошибка удаления маршрута');
+              }
+            } catch (err) {
+              console.error('Ошибка:', err);
+              alert('Ошибка сети');
+            }
+          }
+        },
+        async loadUserProfile() {
+          try {
+            const res = await fetch('/api/get-user-profile');
+            if (res.ok) {
+              const data = await res.json();
+              this.profileForm = { ...data };
+            }
+          } catch (err) {
+            console.error("Не удалось загрузить профиль", err);
+          }
+        },
+
+        // НОВЫЙ МЕТОД: Проверка возраста при потере фокуса
+        handleAgeBlur(event) {
+          if (this.profileForm.age > 80) {
+            this.profileForm.age = 80;
+          } else if (this.profileForm.age < 16) {
+            this.profileForm.age = 16;
+          }
+        },
+
+        // НОВЫЙ МЕТОД: Проверка возраста при вводе
+        handleAgeInput(event) {
+          // Если значение превышает 80, сразу обрезаем до 80
+          if (event.target.value > 80) {
+            this.profileForm.age = 80;
+            event.target.value = 80;
+          }
+        },
+
+        async saveUserData() {
+          if (!this.validateVk(this.profileForm.link_vk_group) || !this.validateTg(this.profileForm.link_tg_group)) {
+            alert("Пожалуйста, исправьте ошибки в ссылках на соцсети");
+            return;
+          }
+
+          const formData = new FormData();
+
+          // Добавляем все текстовые поля из объекта profileForm
+          for (const [key, value] of Object.entries(this.profileForm)) {
+            // Пропускаем поле файла (оно добавляется отдельно) и пустые значения, если нужно
+            if (key !== 'Guide_License' && value !== null && value !== undefined) {
+              formData.append(key, value);
+            }
+          }
+
+          // Добавляем файл, если он выбран и роль позволяет
+          if (this.user.role === 'organizer' && this.$refs.guideLicenseFile.files[0]) {
+            formData.append('Guide_License', this.$refs.guideLicenseFile.files[0]);
+          }
+
+          // УДАЛЕНО: Блок повторного добавления link_vk_group/link_tg_group, 
+          // так как они уже добавлены в цикле выше.
+
+          try {
+            const res = await fetch('/api/update-user-profile', {
+              method: 'PUT',
+              body: formData
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+              this.user.name = result.user.name;
+              this.user.initial = result.user.initial;
+
+              // Обновляем ссылку на лицензию сразу без перезагрузки страницы
+              if (result.newLicenseUrl) {
+                this.profileForm.Guide_License = result.newLicenseUrl;
+              }
+              // Очищаем инпут файла
+              if (this.$refs.guideLicenseFile) this.$refs.guideLicenseFile.value = '';
+
+              alert("Данные успешно обновлены!");
+            } else {
+              alert(result.message || "Ошибка обновления");
+            }
+          } catch (err) {
+            console.error("Ошибка сохранения", err);
+            alert("Ошибка соединения с сервером");
+          }
+        },
+        handlePhoneInput(event) {
+          let value = event.target.value.replace(/\D/g, '');
+
+          if (value.length > 0 && !value.startsWith('7')) {
+            value = '7' + value;
+          }
+
+          if (value.length > 11) {
+            value = value.slice(0, 11);
+          }
+
+          this.profileForm.phone = '+' + value;
+        }, validateVk(url) {
+          if (!url) return true;
+          const pattern = /^(https?:\/\/)?(www\.)?vk\.com\/[\w\d_.-]+\/?$/;
+          return pattern.test(url);
+        },
+        validateTg(url) {
+          if (!url) return true;
+          const pattern = /^(https?:\/\/)?(www\.)?(t\.me|telegram\.me)\/[\w\d_.+-]+\/?$/;
+          return pattern.test(url);
+        },
+        async loadAllSystemRoutes() {
+          try {
+            const res = await fetch('/api/admin/all-routes');
+            if (res.ok) {
+              // Ожидаем структуру { site: [], proposed: [], custom: [] }
+              this.allSystemRoutes = await res.json();
+            }
+          } catch (err) {
+            console.error("Ошибка загрузки админки", err);
+          }
+        }
+      },
+      watch: {
+        activeMenu(newVal) {
+          if (newVal === 'Мои данные') {
+            this.loadUserProfile();
+          }
+          if (newVal === 'Все маршруты') {
+            this.loadAllSystemRoutes();
+          }
+        }, deleteSiteRoute(id) {
+          if (!confirm("Вы уверены, что хотите убрать этот маршрут с сайта?")) return;
+
+          fetch('/api/admin/delete-site-route', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'ok') {
+                // Удаляем из локального массива
+                this.allSystemRoutes.site = this.allSystemRoutes.site.filter(r => r.Route_ID !== id);
+              } else {
+                alert("Ошибка удаления");
+              }
+            });
+        },
+        openRouteDetails(id, type) {
           window.location.href = `/scheduler?id=${id}&type=${type}`;
         }
       },
@@ -137,6 +469,28 @@
           .then(data => {
             if (data.isAuthenticated) {
               this.user = data.user;
+
+              // --- ЛОГИКА МЕНЮ ---
+              if (this.user.role === 'admin') {
+                // Админское меню (БЕЗ "Мои маршруты")
+                this.menu = [
+                  "Маршруты на сайте",
+                  "Предложенные маршруты",
+                  "Пользовательские маршруты",
+                  "Группы",
+                  "Мои данные"
+                ];
+                this.activeMenu = "Маршруты на сайте"; // Ставим активной первую вкладку
+                this.loadAllSystemRoutes(); // Сразу грузим данные
+              } else {
+                // Обычное меню
+                this.menu = ["Мои маршруты", "Группы", "Мои данные"];
+                this.activeMenu = "Мои маршруты";
+                // Грузим личные маршруты
+                fetch('/api/user-routes')
+                  .then(res => res.json())
+                  .then(d => this.routes = d);
+              }
             } else {
               window.location.href = "/autorization";
             }
@@ -150,7 +504,7 @@
           .then(data => this.routes = data)
           .catch(err => {
             console.error("Ошибка загрузки маршрутов", err);
-            this.routes = []; // Или alert("Нет доступа")
+            this.routes = [];
           });
       }
     }).mount("#app");

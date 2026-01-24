@@ -11,7 +11,8 @@ const Route = require("./Route")(sequelize)
 const Record = require("./Record")(sequelize)
 const Custum_Route = require("./Custom_Route")(sequelize)
 const Route_Schedule = require("./Route_Schedule")(sequelize);
-const Route_Point = require("./Route_Point")(sequelize); // <--- Импортируем новую модель
+const Route_Point = require("./Route_Point")(sequelize);
+const administrator = require("./administrator")(sequelize)
 
 // Связи для Custom_Route (ваши старые связи)
 Custum_Route.hasMany(Route_Schedule, { foreignKey: 'Route_custom_ID', as: 'Route_Schedules' }); // Добавьте as: 'Route_Schedules'
@@ -34,5 +35,6 @@ module.exports = {
     Record,
     Custum_Route,
     Route_Schedule,
-    Route_Point
+    Route_Point,
+    administrator
 }
