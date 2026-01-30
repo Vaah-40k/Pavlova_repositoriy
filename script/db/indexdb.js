@@ -35,6 +35,6 @@ module.exports = {
     Record,
     Custum_Route,
     Route_Schedule,
-    Route_Point,
+    Route_Point, 
     administrator
 }
