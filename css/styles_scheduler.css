@@ -31,6 +31,31 @@ body {
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   position: relative;
+  transition: height 2s ease-in-out, border-radius 2s ease-in-out !important;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.container.collapsed {
+  height: 73px !important;
+  /* Высота только шапки */
+  min-height: 73px !important;
+  overflow: hidden;
+}
+
+/* Скрываем контент под шапкой, когда свернуто */
+.container.collapsed>*:not(.header) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s;
+  /* Контент исчезает быстрее, чем сворачивается окно */
+}
+
+/* Плавное появление контента при разворачивании */
+.container:not(.collapsed)>*:not(.header) {
+  opacity: 1;
+  transition: opacity 2s;
 }
 
 /* Header */
@@ -70,17 +95,37 @@ body {
   left: 12px;
   color: #999;
   z-index: 1;
+  display: none;
+
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 12px 12px 44px;
+  padding: 12px 40px 12px 15px;
   border: 1px solid #ccc;
   border-radius: 8px;
   background-color: white;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+}
+
+.search-btn-submit {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.search-btn-submit:hover {
+  color: #007bff;
 }
 
 .search-input:focus {
@@ -285,28 +330,6 @@ body {
 
 
 
-
-/* Состояние свернутого окна */
-.container.collapsed {
-  height: auto !important;
-  /* Отключаем фиксированную или заданную высоту */
-  min-height: 0 !important;
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
-  transition-duration: 2s;
-}
-
-/* Скрываем всё содержимое, кроме хедера, когда добавлен класс .collapsed */
-.container.collapsed>*:not(.header) {
-  display: none !important;
-}
-
-/* Убираем нижнюю границу у хедера в свернутом виде для эстетики */
-.container.collapsed .header {
-  border-bottom: none;
-}
-
-
 .day-parent {
   font-weight: 600;
 }
@@ -332,10 +355,6 @@ body {
 
 
 
-.day-header {
-  font-weight: bold;
-  margin-bottom: 10px;
-}
 
 .record-list {
   padding-left: 20px;
@@ -349,4 +368,19 @@ body {
   background-color: #f0f0f03b;
 }
 
-/* Для выделения активного дня */
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.day-date-input {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 14px;
+  color: #555;
+  background: #fff;
+  width: 130px;
+}

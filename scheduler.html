@@ -1,1100 +1,2014 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Russian UI Modal</title>
     <!-- Добавляем Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="/styles_scheduler.css">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/styles_scheduler.css" />
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-        integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
 
-</head>
-
-<body>
+  <body>
     <!-- Добавляем контейнер для карты (он будет фоном, модалка overlay поверх него) -->
-    <div id="map" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+    <div
+      id="map"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      "
+    ></div>
 
-    <div class="overlay" style="z-index: 2; position: relative; ">
-        <div class="container">
-            <!-- Header -->
-            <header class="header">
-                <button class="menu-btn" aria-label="Меню">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" />
-                    </svg>
-                </button>
+    <div class="overlay" style="z-index: 2; position: relative">
+      <div class="container">
+        <!-- Header -->
+        <header class="header">
+          <button class="menu-btn" aria-label="Меню">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M3 12H21M3 6H21M3 18H21"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
 
-                <div class="search-container">
-                    <input type="text" class="search-input" placeholder="Введите название места...">
-                    <button class="search-btn-submit" aria-label="Поиск">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
-                            <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" />
-                        </svg>
+          <div class="search-container">
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Введите название места..."
+            />
+            <button class="search-btn-submit" aria-label="Поиск">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M21 21L16.65 16.65"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <button class="profile-btn">ЛК</button>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+          <button class="nav-tab">
+            <i class="fas fa-question-circle" style="font-size: 1.2rem"></i>
+          </button>
+          <button class="nav-tab active">Дни</button>
+          <button class="nav-tab">Точки</button>
+          <button class="nav-tab">Протяженность</button>
+          <button class="nav-tab">Снаряжение</button>
+          <button class="nav-tab" id="cost-tab" style="display: none">
+            Стоимость
+          </button>
+        </nav>
+        <!-- Modal Content -->
+        <div class="modal">
+          <div class="modal-header">
+            <h2 class="modal-title">Название</h2>
+          </div>
+
+          <div id="tab-content-info" class="tab-content" style="display: none">
+            <div class="info-section">
+              <label
+                style="display: block; margin-bottom: 10px; font-weight: bold"
+                >Фотографии маршрута (4 шт.)</label
+              >
+
+              <label
+                style="display: block; margin-bottom: 10px; font-weight: bold"
+                >Фотографии маршрута (4 шт.)</label
+              >
+              <div
+                class="photo-grid"
+                style="
+                  width: 20vw;
+                  display: grid;
+                  grid-template-columns: repeat(2, 1fr);
+                  gap: 10px;
+                  margin-bottom: 20px;
+                "
+              >
+                <div
+                  class="photo-slot"
+                  data-index="0"
+                  style="
+                    aspect-ratio: 1/1;
+                    background: #f0f0f0;
+                    border: 2px dashed #ccc;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    position: relative;
+                  "
+                >
+                  <i
+                    class="fas fa-plus"
+                    style="color: #aaa; font-size: 24px"
+                  ></i>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    class="photo-input"
+                  />
+                  <img
+                    class="photo-preview"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                      display: none;
+                    "
+                  />
+                </div>
+                <div
+                  class="photo-slot"
+                  data-index="1"
+                  style="
+                    aspect-ratio: 1/1;
+                    background: #f0f0f0;
+                    border: 2px dashed #ccc;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    position: relative;
+                  "
+                >
+                  <i
+                    class="fas fa-plus"
+                    style="color: #aaa; font-size: 24px"
+                  ></i>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    class="photo-input"
+                  />
+                  <img
+                    class="photo-preview"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                      display: none;
+                    "
+                  />
+                </div>
+                <div
+                  class="photo-slot"
+                  data-index="2"
+                  style="
+                    aspect-ratio: 1/1;
+                    background: #f0f0f0;
+                    border: 2px dashed #ccc;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    position: relative;
+                  "
+                >
+                  <i
+                    class="fas fa-plus"
+                    style="color: #aaa; font-size: 24px"
+                  ></i>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    class="photo-input"
+                  />
+                  <img
+                    class="photo-preview"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                      display: none;
+                    "
+                  />
+                </div>
+                <div
+                  class="photo-slot"
+                  data-index="3"
+                  style="
+                    aspect-ratio: 1/1;
+                    background: #f0f0f0;
+                    border: 2px dashed #ccc;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    position: relative;
+                  "
+                >
+                  <i
+                    class="fas fa-plus"
+                    style="color: #aaa; font-size: 24px"
+                  ></i>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    class="photo-input"
+                  />
+                  <img
+                    class="photo-preview"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                      display: none;
+                    "
+                  />
+                </div>
+              </div>
+
+              <div
+                id="org-cost-modal"
+                style="
+                  display: none;
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  background: rgba(0, 0, 0, 0.5);
+                  z-index: 9999;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <div
+                  style="
+                    background: white;
+                    padding: 25px;
+                    border-radius: 12px;
+                    width: 350px;
+                    text-align: center;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                  "
+                >
+                  <h3 style="margin-top: 0; color: #333">
+                    Сколько будет организационный взнос?
+                  </h3>
+                  <input
+                    type="number"
+                    id="org-cost-input"
+                    placeholder="0"
+                    min="0"
+                    style="
+                      width: 100%;
+                      padding: 10px;
+                      font-size: 16px;
+                      margin: 15px 0;
+                      border: 1px solid #ccc;
+                      border-radius: 6px;
+                    "
+                  />
+                  <div
+                    style="display: flex; gap: 10px; justify-content: center"
+                  >
+                    <button
+                      id="cancel-cost-btn"
+                      style="
+                        padding: 8px 16px;
+                        border: 1px solid #ccc;
+                        background: #f8f9fa;
+                        border-radius: 6px;
+                        cursor: pointer;
+                      "
+                    >
+                      Отмена
                     </button>
+                    <button
+                      id="save-final-btn"
+                      style="
+                        padding: 8px 16px;
+                        border: none;
+                        background: #007bff;
+                        color: white;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: bold;
+                      "
+                    >
+                      Сохранить маршрут
+                    </button>
+                  </div>
                 </div>
+              </div>
 
-                <button class="profile-btn">ЛК</button>
-            </header>
-
-            <!-- Navigation Tabs -->
-            <nav class="nav-tabs">
-                <button class="nav-tab">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </button>
-                <button class="nav-tab active">Дни</button>
-                <button class="nav-tab">Точки</button>
-                <button class="nav-tab">Протяженность</button>
-            </nav>
-
-            <!-- Modal Content -->
-            <div class="modal">
-                <div class="modal-header">
-                    <h2 class="modal-title">Название</h2>
-                </div>
-
-                <div id="tab-content-days" class="tab-content" style="display: block;">
-                    <div class="modal-controls">
-                        <button class="control-btn active">+ День</button>
-                        <button class="control-btn">- День</button>
-                        <button class="control-btn">+ запись</button>
-                        <button class="control-btn">- запис</button>
-                    </div>
-
-                    <div class="days-list">
-                        <div class="day-item">День 1</div>
-                    </div>
-                </div>
-
-                <div id="tab-content-points" class="tab-content" style="display: none;">
-                    <div class="modal-controls">
-                        <button class="control-btn active">+ День</button>
-                        <button class="control-btn">- День</button>
-
-                    </div>
-
-                    <div class="days-list">
-                        <div class="day-item">Нет точек</div>
-                    </div>
-                </div>
-
-                <div id="tab-content-distance" class="tab-content" style="display: none;">
-                    <div class="modal-controls">
-                        <button class="control-btn active">+ День</button>
-                        <button class="control-btn">- День</button>
-                    </div>
-
-                    <div class="days-list">
-                        <div class="day-item">Нет точек</div>
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button id="clear-btn-custom" class="action-btn secondary">Очистить</button>
-                    <button class="action-btn primary">Сохранить</button>
-                </div>
+              <label
+                style="display: block; margin-bottom: 10px; font-weight: bold"
+                >Описание маршрута</label
+              >
+              <textarea
+                id="route-desc-area"
+                placeholder="Расскажите подробнее о путешествии..."
+                style="
+                  width: 100%;
+                  height: 120px;
+                  padding: 10px;
+                  border: 1px solid #ccc;
+                  border-radius: 8px;
+                  resize: none;
+                  margin-top: 10px;
+                "
+              ></textarea>
             </div>
-            <div class="resizer"></div>
+          </div>
+
+          <div id="tab-content-days" class="tab-content" style="display: block">
+            <div class="modal-controls">
+              <button class="control-btn active">+ День</button>
+              <button class="control-btn">- День</button>
+              <button class="control-btn">+ запись</button>
+              <button class="control-btn">- запис</button>
+            </div>
+
+            <div class="days-list">
+              <div class="day-item active">
+                <div
+                  class="day-header"
+                  style="font-weight: bold; cursor: pointer"
+                >
+                  День 1
+                </div>
+                <div class="record-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="tab-content-points"
+            class="tab-content"
+            style="display: none"
+          >
+            <div class="days-list">
+              <div class="day-item">Нет точек</div>
+            </div>
+          </div>
+
+          <div
+            id="tab-content-distance"
+            class="tab-content"
+            style="display: none"
+          >
+            <div class="days-list"></div>
+          </div>
+
+          <div id="tab-content-gear" class="tab-content" style="display: none">
+            <div class="modal-controls">
+              <button class="control-btn active">+ Снаряжение</button>
+              <button class="control-btn">- Снаряжение</button>
+            </div>
+
+            <div class="days-list">
+              <div class="day-item">Список снаряжения пуст</div>
+            </div>
+          </div>
+
+          <div id="tab-content-cost" class="tab-content" style="display: none">
+            <div class="modal-controls">
+              <button class="control-btn active">+ Расход</button>
+              <button class="control-btn">- Расход</button>
+            </div>
+
+            <div class="days-list">
+              <div class="day-item">Список расходов пуст</div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button id="clear-btn-custom" class="action-btn secondary">
+              Очистить
+            </button>
+            <button class="action-btn primary">Сохранить</button>
+          </div>
         </div>
+        <div class="resizer"></div>
+      </div>
     </div>
 
     <!-- Добавляем Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Инициализация карты
-            const map = L.map('map', { zoomControl: false }).setView([55.7558, 37.6173], 10);
+      document.addEventListener("DOMContentLoaded", function () {
+        // --- 1. ИНИЦИАЛИЗАЦИЯ КАРТЫ ---
+        const map = L.map("map", { zoomControl: false }).setView(
+          [55.7558, 37.6173],
+          10,
+        );
 
-            L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap | OpenTopoMap',
-                maxZoom: 17
-            }).addTo(map);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap | OpenTopoMap",
+          maxZoom: 17,
+        }).addTo(map);
+        // opentopomap - такая карта
+        // openstreetmap - другая карта
 
-            L.control.zoom({ position: 'topright' }).addTo(map);
+        L.control.zoom({ position: "topright" }).addTo(map);
 
-            let markers = [];  // Храним объекты маркеров
-            let pointNames = []; // Храним имена точек
-            let routeLayer = null;  // Храним слой маршрута
-            let dashedLayers = [];  // Храним пунктирные линии для очистки
-            let routeData = null; // Храним данные маршрута
-            let routeName = 'Название'; // Имя маршрута для заголовка
+        // --- 2. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
+        let markers = []; // Объекты маркеров Leaflet
+        let pointNames = []; // Имена точек (синхронизированы по индексу с markers)
+        let routeLayer = null; // Слой линии маршрута
+        let routeData = null; // Данные от сервера (дистанция, сегменты)
+        let routeName = "Название маршрута";
+        let dashedLayers = []; // Пунктирные линии
 
+        // Элементы UI
+        const container = document.querySelector(".container");
+        const modalTitle = document.querySelector(".modal-title");
 
-            // Set transition for smooth height change
-            const container = document.querySelector('.container');
-            container.style.overflow = 'hidden';
+        modalTitle.textContent = routeName;
 
-            const modalTitle = document.querySelector('.modal-title');
+        // --- 3. ПРОВЕРКА РОЛИ (Cookie JWT) ---
+        function getCookie(name) {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(";").shift();
+        }
+
+        function checkUserRole() {
+          const token = getCookie("token");
+          if (!token) return "participant";
+          try {
+            // Декодируем JWT (часть после первой точки)
+            const base64Url = token.split(".")[1];
+            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split("")
+                .map(function (c) {
+                  return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join(""),
+            );
+
+            return JSON.parse(jsonPayload).role || "participant";
+          } catch (e) {
+            console.error("Ошибка чтения токена", e);
+            return "participant";
+          }
+        }
+
+        const userRole = checkUserRole();
+        const costTab = document.getElementById("cost-tab");
+
+        // Логика отображения вкладки
+        if (costTab) {
+          // В системе роль называется 'organizer' (это и есть Гид)
+          if (userRole === "organizer" || userRole === "admin") {
+            costTab.style.display = "inline-block"; // Или 'block', зависит от CSS flex
+          } else {
+            costTab.style.display = "none !important";
+            // Если вкладка скрыта, удаляем её из потока, чтобы не мешала
+            costTab.remove();
+          }
+        }
+
+        // --- 4. РЕДАКТИРОВАНИЕ ЗАГОЛОВКА МАРШРУТА ---
+        modalTitle.addEventListener("dblclick", () => {
+          if (
+            document.getElementById("tab-content-days").style.display !==
+            "block"
+          )
+            return;
+          modalTitle.contentEditable = true;
+          modalTitle.focus();
+        });
+        modalTitle.addEventListener("blur", () => {
+          modalTitle.contentEditable = false;
+          routeName = modalTitle.textContent.trim() || "Название маршрута";
+        });
+        modalTitle.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            modalTitle.blur();
+          }
+        });
+
+        // --- 5. ЛОГИКА КАРТЫ (Добавление точек) ---
+        map.on("click", async function (e) {
+          if (markers.length >= 20) {
+            alert("Максимум 20 точек");
+            return;
+          }
+          // Добавляем точку
+          addMarker(e.latlng.lat, e.latlng.lng);
+
+          // Пересчитываем маршрут
+          await recalculateRoute();
+        });
+
+        // Универсальная функция добавления маркера
+        function addMarker(lat, lng, name = null) {
+          const marker = L.marker([lat, lng]).addTo(map);
+          markers.push(marker);
+
+          const pName = name || `Точка ${markers.length}`;
+          pointNames.push(pName);
+
+          marker.bindPopup(pName);
+
+          // Обновляем список во вкладке "Точки"
+          updatePointsList();
+        }
+
+        // --- 6. ПОСТРОЕНИЕ МАРШРУТА (API) ---
+        async function recalculateRoute() {
+          if (markers.length >= 2) {
+            await buildRoute();
+          } else {
+            if (routeLayer) {
+              map.removeLayer(routeLayer);
+              routeLayer = null;
+            }
+            dashedLayers.forEach((l) => map.removeLayer(l));
+            dashedLayers = [];
+            routeData = null;
+            // Всегда обновляем список дистанций
+            updateDistanceList();
+            updateTitle();
+          }
+        }
+
+        async function buildRoute() {
+          const coords = markers.map((m) => [
+            m.getLatLng().lng,
+            m.getLatLng().lat,
+          ]);
+
+          try {
+            const response = await fetch("/generate-route", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ coordinates: coords }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              console.warn("API Warning:", data.error);
+              routeData = null;
+              if (routeLayer) {
+                map.removeLayer(routeLayer);
+                routeLayer = null;
+              }
+              // Всегда обновляем список дистанций, даже при ошибке
+              updateDistanceList();
+              return;
+            }
+
+            routeData = data;
+
+            if (routeLayer) map.removeLayer(routeLayer);
+
+            if (data.geometry) {
+              routeLayer = L.geoJSON(data.geometry, {
+                style: { color: "#007bff", weight: 5, opacity: 0.8 },
+              }).addTo(map);
+
+              map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+            }
+
+            // Всегда обновляем список дистанций
+            updateDistanceList();
+            updateTitle();
+          } catch (error) {
+            console.error("Ошибка построения:", error);
+            routeData = null;
+            updateDistanceList();
+          }
+        }
+
+        // --- 7. ВКЛАДКА "ТОЧКИ" (С ПЕРЕИМЕНОВАНИЕМ) ---
+        function updatePointsList() {
+          const list = document.querySelector("#tab-content-points .days-list");
+          if (!list) return;
+          list.innerHTML = "";
+
+          if (pointNames.length === 0) {
+            list.innerHTML = '<div class="day-item">Нет точек</div>';
+            return;
+          }
+
+          pointNames.forEach((name, index) => {
+            const item = document.createElement("div");
+            item.className = "day-item";
+            item.style.display = "flex";
+            item.style.alignItems = "center";
+
+            // Иконка маркера (для красоты и зума к точке)
+            const icon = document.createElement("i");
+            icon.className = "fas fa-map-marker-alt";
+            icon.style.color = "#3388ff";
+            icon.style.marginRight = "10px";
+            icon.style.cursor = "pointer";
+            icon.onclick = () => {
+              map.flyTo(markers[index].getLatLng(), 15);
+            };
+
+            // Текстовое поле имени
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = name; // Убрали индекс из имени для чистоты, или можно оставить `${index + 1}. ${name}`
+            nameSpan.style.cursor = "pointer";
+            nameSpan.style.flex = "1";
+            nameSpan.style.borderBottom = "1px dashed transparent";
+            nameSpan.title = "Нажмите, чтобы переименовать";
+
+            // Логика переименования
+            nameSpan.addEventListener("click", function () {
+              this.contentEditable = true;
+              this.focus();
+              this.style.borderBottom = "1px solid #007bff";
+              this.style.backgroundColor = "#f0f8ff";
+            });
+
+            // Сохранение при потере фокуса
+            nameSpan.addEventListener("blur", function () {
+              this.contentEditable = false;
+              this.style.borderBottom = "1px dashed transparent";
+              this.style.backgroundColor = "transparent";
+
+              let newName = this.textContent.trim();
+              if (!newName) newName = `Точка ${index + 1}`;
+
+              // Сохраняем новое имя в массив
+              pointNames[index] = newName;
+              this.textContent = newName;
+
+              // Обновляем попап на карте
+              markers[index].bindPopup(newName);
+
+              // Обновляем вкладку "Протяженность" и селекты в "Днях"
+              updateDistanceList();
+
+              // Если нужно обновить селекты в днях, можно вызвать обновление (опционально)
+              const daysList = document.querySelector(
+                "#tab-content-days .days-list",
+              );
+              // Здесь можно добавить логику обновления выпадающих списков, если они открыты
+            });
+
+            nameSpan.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                nameSpan.blur();
+              }
+            });
+
+            item.appendChild(icon);
+            item.appendChild(nameSpan);
+            list.appendChild(item);
+          });
+        }
+        // --- 8. ВКЛАДКА "ПРОТЯЖЕННОСТЬ" (ПАРЫ ТОЧЕК) ---
+        function updateDistanceList() {
+          const list = document.querySelector(
+            "#tab-content-distance .days-list",
+          );
+          if (!list) return;
+
+          // Очищаем список каждый раз
+          list.innerHTML = "";
+
+          // Если точек меньше 2
+          if (markers.length < 2) {
+            list.innerHTML =
+              '<div class="day-item">Добавьте минимум 2 точки</div>';
+            return;
+          }
+
+          let totalDistance = 0;
+
+          // СЦЕНАРИЙ A: Есть данные от сервера (маршрут по дорогам)
+          if (
+            routeData &&
+            routeData.segments &&
+            routeData.segments.length > 0
+          ) {
+            routeData.segments.forEach((seg, index) => {
+              // Безопасная проверка имен
+              const name1 = pointNames[index] || `Точка ${index + 1}`;
+              const name2 = pointNames[index + 1] || `Точка ${index + 2}`;
+
+              // Добавляем запись в список
+              addDistanceRow(list, name1, name2, seg.distance, "road");
+            });
+          }
+
+          // СЦЕНАРИЙ B: Нет данных от сервера (считаем по прямой)
+          // Выполняется, если API вернул ошибку или routeData null
+          if (
+            !routeData ||
+            !routeData.segments ||
+            routeData.segments.length === 0
+          ) {
+            for (let i = 0; i < markers.length - 1; i++) {
+              const latlng1 = markers[i].getLatLng();
+              const latlng2 = markers[i + 1].getLatLng();
+              const distKm = latlng1.distanceTo(latlng2) / 1000;
+
+              totalDistance += distKm;
+
+              const name1 = pointNames[i] || `Точка ${i + 1}`;
+              const name2 = pointNames[i + 1] || `Точка ${i + 2}`;
+
+              addDistanceRow(
+                list,
+                name1,
+                name2,
+                distKm.toFixed(2) + " км",
+                "direct",
+              );
+            }
+          }
+        }
+
+        // Вспомогательная функция для отрисовки строки расстояния между двумя точками
+        function addDistanceRow(container, name1, name2, distStr, type) {
+          const row = document.createElement("div");
+          row.className = "day-item";
+          row.style.display = "flex";
+          row.style.justifyContent = "space-between";
+          row.style.alignItems = "center";
+          row.style.padding = "8px";
+          row.style.marginBottom = "5px";
+          row.style.borderBottom = "1px solid #eee";
+          row.style.fontSize = "0.9em";
+
+          const icon =
+            type === "road"
+              ? '<i class="fas fa-route" style="margin-right: 8px; color: #007bff;"></i>'
+              : '<i class="fas fa-ruler" style="margin-right: 8px; color: #6c757d;"></i>';
+
+          row.innerHTML = `
+        <span style="color:#555; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
+            <strong>${name1}</strong> : <strong>${name2}</strong>
+        </span>
+        <span style="font-weight:bold; color:#303f69; white-space:nowrap; margin-left: 10px;">
+            ${icon} ${distStr}
+        </span>
+    `;
+          container.appendChild(row);
+        }
+
+        // Вспомогательная функция для отрисовки строки общей дистанции
+
+        // --- 9. ВКЛАДКА "ДНИ" (С ВОССТАНОВЛЕНИЕМ) ---
+
+        // Функция создания DOM элемента Дня
+        function createDayElement(title) {
+          const dayDiv = document.createElement("div");
+          dayDiv.className = "day-item";
+          dayDiv.innerHTML = `<div class="day-header" style="font-weight:bold; cursor:pointer;">${title}</div><div class="record-list"></div>`;
+
+          // Выделение активного дня
+          dayDiv.addEventListener("click", function (e) {
+            // Если клик не по инпутам
+            if (
+              e.target.tagName !== "INPUT" &&
+              e.target.tagName !== "SELECT" &&
+              !e.target.classList.contains("remove-rec")
+            ) {
+              document
+                .querySelectorAll("#tab-content-days .day-item")
+                .forEach((d) => d.classList.remove("active"));
+              dayDiv.classList.add("active");
+            }
+          });
+          return dayDiv;
+        }
+
+        // Функция добавления записи (точка/текст + время) в день
+        function addRecordToDay(
+          recordList,
+          timeVal = "12:00",
+          pointNameVal = "",
+          textVal = "",
+          isTextMode = false,
+        ) {
+          const recDiv = document.createElement("div");
+          recDiv.className = "record-item";
+          recDiv.style.display = "flex";
+          recDiv.style.marginTop = "5px";
+          recDiv.style.alignItems = "center";
+          recDiv.style.gap = "5px";
+          recDiv.style.flexWrap = "wrap";
+
+          // Контейнер для переключателя
+          const switchContainer = document.createElement("div");
+          switchContainer.style.display = "flex";
+          switchContainer.style.gap = "5px";
+          switchContainer.style.marginBottom = "5px";
+          switchContainer.style.width = "100%";
+
+          // Кнопка переключения между точкой и текстом
+          const switchButton = document.createElement("button");
+          switchButton.type = "button";
+          switchButton.className = "record-switch";
+          switchButton.textContent = isTextMode ? "Текст" : "Точка";
+          switchButton.style.padding = "2px 8px";
+          switchButton.style.border = "1px solid #ccc";
+          switchButton.style.borderRadius = "3px";
+          switchButton.style.background = "#f0f0f0";
+          switchButton.style.cursor = "pointer";
+          switchButton.style.fontSize = "12px";
+
+          // Селект выбора точки (скрыт, если выбран текст)
+          const selectContainer = document.createElement("div");
+          selectContainer.style.flex = "1";
+          selectContainer.style.display = isTextMode ? "none" : "block";
+
+          const select = document.createElement("select");
+          select.style.width = "100%";
+          select.className = "point-select";
+          select.dataset.fieldType = "point";
+
+          // Функция наполнения селекта
+          const fillOptions = () => {
+            const current = select.value;
+            select.innerHTML =
+              '<option value="" disabled selected>Выбрать точку</option>';
+            pointNames.forEach((n) => {
+              const opt = document.createElement("option");
+              opt.value = n;
+              opt.textContent = n;
+              if (n === pointNameVal || n === current) opt.selected = true;
+              select.appendChild(opt);
+            });
+          };
+          fillOptions();
+          select.addEventListener("mousedown", fillOptions);
+
+          // Поле для текста (скрыто, если выбрана точка)
+          const textContainer = document.createElement("div");
+          textContainer.style.flex = "1";
+          textContainer.style.display = isTextMode ? "block" : "none";
+
+          const textInput = document.createElement("input");
+          textInput.type = "text";
+          textInput.placeholder = "Введите текст...";
+          textInput.value = textVal || "";
+          textInput.style.width = "100%";
+          textInput.style.padding = "8px";
+          textInput.style.border = "1px solid #ccc";
+          textInput.style.borderRadius = "3px";
+          textInput.dataset.fieldType = "text";
+
+          // Поле времени (всегда видно)
+          const timeContainer = document.createElement("div");
+          const timeInput = document.createElement("input");
+          timeInput.type = "time";
+          timeInput.value = timeVal;
+          timeInput.style.padding = "8px";
+          timeInput.style.border = "1px solid #ccc";
+          timeInput.style.borderRadius = "3px";
+
+          // Кнопка удаления записи
+          const delBtn = document.createElement("button");
+          delBtn.innerHTML = "&times;";
+          delBtn.className = "remove-rec";
+          delBtn.style.color = "red";
+          delBtn.style.border = "none";
+          delBtn.style.background = "transparent";
+          delBtn.style.cursor = "pointer";
+          delBtn.style.padding = "5px 10px";
+          delBtn.style.fontSize = "16px";
+          delBtn.onclick = () => recDiv.remove();
+
+          // Логика переключения
+          switchButton.onclick = () => {
+            const isCurrentlyText = switchButton.textContent === "Текст";
+
+            if (isCurrentlyText) {
+              // Переключаем на точку
+              switchButton.textContent = "Точка";
+              selectContainer.style.display = "block";
+              textContainer.style.display = "none";
+            } else {
+              // Переключаем на текст
+              switchButton.textContent = "Текст";
+              selectContainer.style.display = "none";
+              textContainer.style.display = "block";
+            }
+          };
+
+          // Собираем элементы
+          selectContainer.appendChild(select);
+          textContainer.appendChild(textInput);
+          timeContainer.appendChild(timeInput);
+
+          switchContainer.appendChild(switchButton);
+
+          recDiv.appendChild(switchContainer);
+          recDiv.appendChild(selectContainer);
+          recDiv.appendChild(textContainer);
+          recDiv.appendChild(timeContainer);
+          recDiv.appendChild(delBtn);
+
+          recordList.appendChild(recDiv);
+        }
+        // Инициализация кнопок управления Днями
+        function initDaysControls() {
+          const container = document.getElementById("tab-content-days");
+          const list = container.querySelector(".days-list");
+          const btns = container.querySelectorAll(".control-btn"); // +День, -День, +Запись, -Запись
+
+          // +День
+          btns[0].onclick = () => {
+            const count = list.children.length + 1;
+            const day = createDayElement(`День ${count}`);
+            list.appendChild(day);
+            // Делаем новый активным
+            list
+              .querySelectorAll(".day-item")
+              .forEach((d) => d.classList.remove("active"));
+            day.classList.add("active");
+          };
+
+          // -День
+          btns[1].onclick = () => {
+            if (list.lastChild) list.lastChild.remove();
+          };
+
+          // +Запись
+          btns[2].onclick = () => {
+            const activeDay =
+              list.querySelector(".day-item.active") || list.lastElementChild;
+            if (activeDay) {
+              // По умолчанию создаем запись с точкой
+              addRecordToDay(activeDay.querySelector(".record-list"));
+            } else {
+              alert("Сначала создайте день");
+            }
+          };
+
+          // -Запись (удаляет последнюю в активном дне)
+          btns[3].onclick = () => {
+            const activeDay =
+              list.querySelector(".day-item.active") || list.lastElementChild;
+            if (activeDay) {
+              const recList = activeDay.querySelector(".record-list");
+              if (recList.lastChild) recList.lastChild.remove();
+            }
+          };
+        }
+        initDaysControls();
+
+        function initFirstDay() {
+          const firstDay = document.querySelector(
+            "#tab-content-days .day-item",
+          );
+          if (firstDay) {
+            // Добавляем обработчик клика для активации первого дня
+            firstDay.addEventListener("click", function (e) {
+              // Если клик не по инпутам
+              if (
+                e.target.tagName !== "INPUT" &&
+                e.target.tagName !== "SELECT" &&
+                !e.target.classList.contains("remove-rec")
+              ) {
+                document
+                  .querySelectorAll("#tab-content-days .day-item")
+                  .forEach((d) => d.classList.remove("active"));
+                firstDay.classList.add("active");
+              }
+            });
+          }
+        }
+        initFirstDay();
+
+        // --- 10. СОХРАНЕНИЕ МАРШРУТА ---
+        const photoSlots = document.querySelectorAll(".photo-slot");
+        const photoFiles = [null, null, null, null]; // Хранилище файлов
+
+        photoSlots.forEach((slot, index) => {
+          const input = slot.querySelector(".photo-input");
+          const img = slot.querySelector(".photo-preview");
+          const icon = slot.querySelector("i");
+
+          slot.addEventListener("click", () => input.click());
+
+          input.addEventListener("change", function () {
+            if (this.files && this.files[0]) {
+              const file = this.files[0];
+              photoFiles[index] = file; // Сохраняем файл
+
+              const reader = new FileReader();
+              reader.onload = function (e) {
+                img.src = e.target.result;
+                img.style.display = "block";
+                icon.style.display = "none";
+              };
+              reader.readAsDataURL(file);
+            }
+          });
+        });
+
+        // --- ЛОГИКА СОХРАНЕНИЯ ---
+        // 1. Находим кнопку "Сохранить" в главном модальном окне
+        const mainSaveBtn = document.querySelector(".action-btn.primary");
+        const costModal = document.getElementById("org-cost-modal");
+        const finalSaveBtn = document.getElementById("save-final-btn");
+        const cancelCostBtn = document.getElementById("cancel-cost-btn");
+        const costInput = document.getElementById("org-cost-input");
+        const descArea = document.getElementById("route-desc-area"); // Textarea описания
+
+        // Обработчик первой кнопки "Сохранить" (Валидация)
+        mainSaveBtn.onclick = function () {
+          // А. Проверка заполнения формы (Описания и Фото)
+          const desc = descArea.value.trim();
+
+          const previews = document.querySelectorAll(".photo-preview");
+          const filledPhotos = Array.from(previews).every(
+            (img) => img.style.display === "block" && img.src,
+          );
+
+          if (!desc || !filledPhotos) {
+            alert("данные в модальном окне не заполены");
+            document.querySelectorAll(".nav-tab")[0].click();
+            return;
+          }
+
+          // Б. Проверка наличия точек (минимум 1)
+          if (markers.length === 0) {
+            alert("Добавьте хотя бы одну точку на карту");
+            return;
+          }
+
+          // Если все ок -> Показываем окно стоимости
+          costModal.style.display = "flex";
+          costInput.focus();
+        };
+
+        // Кнопка отмены в модалке стоимости
+        cancelCostBtn.onclick = () => {
+          costModal.style.display = "none";
+        };
+
+        // Кнопка финального сохранения
+        finalSaveBtn.onclick = async () => {
+          const costVal = costInput.value.replace(/\D/g, ""); // Только цифры
+          const orgCost = parseInt(costVal) || 0;
+
+          // Скрываем модалку и меняем текст кнопки
+          costModal.style.display = "none";
+          mainSaveBtn.textContent = "Сохранение...";
+
+          // --- СБОР ДАННЫХ ---
+          // 1. Точки
+          const pointsData = markers.map((m, i) => ({
+            lat: m.getLatLng().lat,
+            lng: m.getLatLng().lng,
+            name: pointNames[i],
+          }));
+
+          // 2. Расписание (Код сбора scheduleData оставляем ваш старый, он работает)
+          const scheduleData = [];
+          const daysElements = document.querySelectorAll(
+            "#tab-content-days .days-list > .day-item",
+          );
+          const today = new Date();
+          // ... (Вставьте сюда ваш код цикла по daysElements для scheduleData, он большой, я его сократил для чтения) ...
+          daysElements.forEach((dayEl, dayIdx) => {
+            const d = new Date(today);
+            d.setDate(today.getDate() + dayIdx);
+            const dateStr = d.toISOString().split("T")[0];
+            const records = dayEl.querySelectorAll(".record-item");
+            records.forEach((rec) => {
+              const select = rec.querySelector(
+                'select[data-field-type="point"]',
+              );
+              const textInput = rec.querySelector(
+                'input[data-field-type="text"]',
+              );
+              const time = rec.querySelector('input[type="time"]').value;
+              const switchBtn = rec.querySelector(".record-switch");
+              const isTextMode = switchBtn
+                ? switchBtn.textContent === "Текст"
+                : false;
+              let pName = "",
+                note = "";
+              if (isTextMode && textInput) note = textInput.value.trim();
+              else if (select) pName = select.value;
+
+              if ((pName || note) && time) {
+                let pIndex = pName ? pointNames.indexOf(pName) + 1 : 0;
+                scheduleData.push({
+                  point_index: pIndex,
+                  visit_date: dateStr,
+                  visit_time: time + ":00",
+                  note: note || (dayIdx > 0 ? `День ${dayIdx + 1}` : ""),
+                  is_text: isTextMode ? 1 : 0,
+                });
+              }
+            });
+          });
+
+          // 3. Дистанция
+          let len = 0,
+            dur = "";
+          if (routeData) {
+            len = parseFloat(routeData.distance) * 1000;
+            dur = routeData.duration;
+          }
+          const center = map.getCenter();
+
+          // --- ОТПРАВКА FORMDATA ---
+          const formData = new FormData();
+          formData.append("name", routeName);
+          formData.append("description", descArea.value.trim());
+          formData.append("length", Math.round(len));
+          formData.append("duration", dur);
+          formData.append("days", daysElements.length);
+          formData.append("map_zoom", map.getZoom());
+          formData.append("map_center", `${center.lat},${center.lng}`);
+          formData.append("cost_organization", orgCost); // Наш новый взнос
+
+          // Сложные массивы шлем как JSON строки
+          formData.append("points", JSON.stringify(pointsData));
+          formData.append("schedule", JSON.stringify(scheduleData));
+          formData.append("gear", JSON.stringify(getGearList())); // Функция getGearList у вас уже есть
+          formData.append("costs", JSON.stringify(getCostList())); // Функция getCostList у вас уже есть
+
+          // Добавляем файлы
+          photoFiles.forEach((file, index) => {
+            if (file instanceof File) {
+              formData.append(`photo_${index}`, file);
+            }
+          });
+
+          try {
+            const res = await fetch("/api/save-custom-route", {
+              method: "POST",
+              // Headers не ставим! Браузер сам выставит multipart/form-data
+              body: formData,
+            });
+            const ans = await res.json();
+            if (res.ok) alert(ans.message || "Сохранено");
+            else alert("Ошибка: " + ans.error);
+          } catch (e) {
+            console.error(e);
+            alert("Ошибка сети");
+          } finally {
+            mainSaveBtn.textContent = "Сохранить";
+          }
+        };
+
+        // Вспомогательные функции для списков
+        function getGearList() {
+          const items = document.querySelectorAll(
+            "#tab-content-gear .days-list .day-item",
+          );
+          const gearList = [];
+
+          items.forEach((item) => {
+            // Пропускаем заглушку "пустой список"
+            if (
+              item.textContent.includes("пуст") ||
+              item.textContent.includes("Список снаряжения пуст")
+            ) {
+              return;
+            }
+
+            // Для снаряжения ищем текстовый элемент (span)
+            const textSpan = item.querySelector("span");
+            // Или обычный текстовый контент
+            const textContent = item.textContent.trim();
+
+            let gearName = "";
+
+            if (textSpan && textSpan.textContent.trim()) {
+              gearName = textSpan.textContent.trim();
+            } else if (textContent && !textContent.includes("×")) {
+              // Убираем символ удаления если есть
+              gearName = textContent.replace("×", "").trim();
+            }
+
+            if (gearName && gearName !== "Новая вещь") {
+              gearList.push(gearName);
+            }
+          });
+
+          return gearList;
+        }
+
+        function getCostList() {
+          const items = document.querySelectorAll(
+            "#tab-content-cost .days-list .day-item",
+          );
+          const costList = [];
+
+          items.forEach((item) => {
+            // Пропускаем заглушку "пустой список"
+            if (
+              item.textContent.includes("пуст") ||
+              item.textContent.includes("Список расходов пуст")
+            ) {
+              return;
+            }
+
+            const inputs = item.querySelectorAll("input");
+            if (inputs.length >= 2) {
+              const name = inputs[0].value.trim();
+              const amount = parseFloat(inputs[1].value) || 0;
+
+              if (name) {
+                costList.push({
+                  name: name,
+                  amount: amount,
+                });
+              }
+            }
+          });
+
+          return costList;
+        }
+        // --- 11. ЗАГРУЗКА И ВОССТАНОВЛЕНИЕ (Persistence) ---
+        async function loadRouteFromUrl() {
+          const params = new URLSearchParams(window.location.search);
+          const id = params.get("id");
+          const type = params.get("type");
+          if (!id) return;
+
+          try {
+            const res = await fetch(
+              `/api/get-route-details?id=${id}&type=${type}`,
+            );
+            const data = await res.json();
+            if (!res.ok) return;
+
+            // 1. Имя
+            routeName = data.name;
             modalTitle.textContent = routeName;
 
-            // Добавляем возможность редактирования заголовка только в вкладке "Дни"
-            modalTitle.addEventListener('dblclick', () => {
-                if (document.getElementById('tab-content-days').style.display !== 'block') return;
-                modalTitle.contentEditable = true;
-                modalTitle.focus();
-            });
+            if (data.description) {
+              const descArea = document.getElementById("route-desc-area");
+              if (descArea) descArea.value = data.description;
+            }
 
-            modalTitle.addEventListener('blur', () => {
-                modalTitle.contentEditable = false;
-                const newName = modalTitle.textContent.trim();
-                routeName = newName ? newName : 'Название';
-                modalTitle.textContent = routeName;
-            });
+            // 2. Фотографии
+            // Ожидается, что сервер отдает массив data.photos
+            if (
+              data.photos &&
+              Array.isArray(data.photos) &&
+              data.photos.length > 0
+            ) {
+              const slots = document.querySelectorAll(".photo-slot");
 
-            modalTitle.addEventListener('keyup', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    modalTitle.blur();
+              data.photos.forEach((path, i) => {
+                if (!slots[i]) return;
+
+                const img = slots[i].querySelector(".photo-preview");
+                const icon = slots[i].querySelector("i");
+
+                img.src = window.location.origin + path;
+                img.style.display = "block";
+                icon.style.display = "none";
+
+                //  КЛЮЧЕВОЕ — помечаем, что тут серверное фото
+                photoFiles[i] = "SERVER_FILE";
+              });
+            }
+            // 2. Точки
+            if (data.points) {
+              data.points.forEach((pt) => addMarker(pt.lat, pt.lng, pt.name));
+              // Зум к точкам
+              const group = new L.featureGroup(markers);
+              if (markers.length > 0) map.fitBounds(group.getBounds());
+              // Строим маршрут
+              await recalculateRoute();
+            }
+
+            // 3. Расписание (ВОССТАНОВЛЕНИЕ ДНЕЙ)
+            if (data.schedule && data.schedule.length > 0) {
+              const daysList = document.querySelector(
+                "#tab-content-days .days-list",
+              );
+              daysList.innerHTML = ""; // Очищаем дефолтный "День 1"
+
+              // Сортируем записи по дате и времени
+              data.schedule.sort((a, b) => {
+                const dateA = new Date(a.visit_date + "T" + a.visit_time);
+                const dateB = new Date(b.visit_date + "T" + b.visit_time);
+                return dateA - dateB;
+              });
+
+              // Группируем записи строго по Дате (YYYY-MM-DD)
+              // Объект будет вида: { "2026-01-26": [record1, record2], "2026-01-27": [...] }
+              const groupedByDate = {};
+
+              data.schedule.forEach((item) => {
+                // Берем только дату (первые 10 символов: YYYY-MM-DD)
+                // item.visit_date может быть "2026-01-26T00:00:00.000Z" или просто "2026-01-26"
+                const dateKey = item.visit_date.substring(0, 10);
+
+                if (!groupedByDate[dateKey]) {
+                  groupedByDate[dateKey] = [];
                 }
-            });
 
-            // КЛИК ПО КАРТЕ
-            map.on('click', async function (e) {
-                if (markers.length >= 20) {
-                    alert('Дорогой пользователь, на карту можно наносить только до 20 меток');
-                    return;
-                }
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
+                groupedByDate[dateKey].push(item);
+              });
 
-                // 1. Ставим обычный синий маркер (без цифр)
-                const marker = L.marker([lat, lng]).addTo(map);
+              // Проходимся по уникальным датам и создаем Дни
+              // Object.keys не гарантирует порядок, поэтому лучше явно отсортировать даты
+              const sortedDates = Object.keys(groupedByDate).sort();
 
-                // Добавляем всплывашку, чтобы можно было удалить (опционально)
-                marker.bindPopup("Точка маршрута").on('click', () => {
-                    // Тут можно добавить логику удаления при клике на сам маркер
+              sortedDates.forEach((dateKey, index) => {
+                const records = groupedByDate[dateKey];
+
+                // Создаем заголовок "День N"
+                const dayTitle = `День ${index + 1}`;
+                const dayEl = createDayElement(dayTitle);
+                const recList = dayEl.querySelector(".record-list");
+
+                // Добавляем записи внутрь дня
+                records.forEach((item) => {
+                  // Восстанавливаем имя точки по индексу
+                  let pName = "";
+                  if (
+                    item.point_index > 0 &&
+                    pointNames[item.point_index - 1]
+                  ) {
+                    pName = pointNames[item.point_index - 1];
+                  }
+
+                  // Определяем тип записи
+                  // is_text приходит из БД (0 или 1), либо определяем по индексу точки
+                  const isText = item.is_text === 1 || item.point_index === 0;
+
+                  // Если это текстовая запись, то Note - это текст пользователя.
+                  // Если это точка, Note - это техническая заметка (или пустая).
+                  const noteText = item.note || "";
+
+                  // Форматируем время (обрезаем секунды)
+                  const timeStr = item.visit_time
+                    ? item.visit_time.substring(0, 5)
+                    : "12:00";
+
+                  if (isText) {
+                    // Текстовая запись
+                    // addRecordToDay(container, time, pointName, textVal, isTextMode)
+                    addRecordToDay(recList, timeStr, "", noteText, true);
+                  } else {
+                    // Запись с точкой
+                    addRecordToDay(recList, timeStr, pName, "", false);
+                  }
                 });
 
-                markers.push(marker);
-                pointNames.push(`Точка ${markers.length}`);
+                daysList.appendChild(dayEl);
+              });
 
-                // Update points list
-                updatePointsList();
+              // Если вдруг в расписании пусто (чего быть не должно при проверке length > 0),
+              // создадим хотя бы один пустой день
+              if (daysList.children.length === 0) {
+                const day = createDayElement("День 1");
+                daysList.appendChild(day);
+              }
 
-                // 2. Если есть минимум 2 точки — строим маршрут
-                if (markers.length >= 2) {
-                    await buildRoute();
-                    updateDistanceList();
-                    updateTitle(); // Update title dynamically
-                }
-            });
-
-            // ФУНКЦИЯ ПОСТРОЕНИЯ МАРШРУТА
-            async function buildRoute() {
-                // Собираем координаты: [[lon, lat], [lon, lat]]
-                const coords = markers.map(m => [m.getLatLng().lng, m.getLatLng().lat]);
-
-                try {
-                    const response = await fetch('/generate-route', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ coordinates: coords })
-                    });
-
-                    const data = await response.json();
-                    routeData = data;
-
-                    if (!response.ok) {
-                        // Если ошибка (например, далеко от дороги), выводим alert, но не ломаем карту
-                        console.warn(data.error);
-                        alert(data.error || 'Ошибка построения');
-                        return;
-                    }
-
-                    // Удаляем старую линию и пунктиры
-                    if (routeLayer) map.removeLayer(routeLayer);
-                    dashedLayers.forEach(layer => map.removeLayer(layer));
-                    dashedLayers = [];
-
-                    // Рисуем основную линию (Синюю для вело)
-                    routeLayer = L.geoJSON(data.geometry, {
-                        style: { color: '#007bff', weight: 5, opacity: 0.8 }
-                    }).addTo(map);
-
-                    // ДОСТРОЙКА ПУНКТИРОМ: Для каждой точки, если snapped != user
-                    data.snapped_waypoints.forEach((snap, i) => {
-                        if (snap.distance > 1) {  // Если >1м, достраиваем пунктир
-                            const userLatLng = markers[i].getLatLng();
-                            const snappedLatLng = L.latLng(snap.location[1], snap.location[0]);  // [lon, lat] -> latLng
-
-                            const dashed = L.polyline([userLatLng, snappedLatLng], {
-                                color: 'gray',
-                                weight: 3,
-                                dashArray: '5, 5',
-                                opacity: 0.7
-                            }).addTo(map);
-
-                            dashedLayers.push(dashed);
-                        }
-                    });
-
-                    // Фокусируем карту на маршруте (учитывая пунктиры)
-                    const bounds = routeLayer.getBounds();
-                    dashedLayers.forEach(d => bounds.extend(d.getBounds()));
-                    map.fitBounds(bounds, { padding: [50, 50] });
-
-                    // Обновляем инфо-панель
-                    displayRouteInfo(data);
-
-                } catch (error) {
-                    console.error('Ошибка сети:', error);
-                }
-            }
-
-            // Function to update points list in "Точки" tab
-            function updatePointsList() {
-                const pointsList = document.querySelector('#tab-content-points .days-list');
-                if (!pointsList) return;
-
-                pointsList.innerHTML = '';
-
-                if (markers.length === 0) {
-                    const emptyItem = document.createElement('div');
-                    emptyItem.className = 'day-item';
-                    emptyItem.textContent = 'Нет точек';
-                    pointsList.appendChild(emptyItem);
-                } else {
-                    markers.forEach((marker, index) => {
-                        const pointItem = document.createElement('div');
-                        pointItem.className = 'day-item';
-                        pointItem.style.display = 'flex';
-                        pointItem.style.alignItems = 'center';
-
-                        // Иконка метки
-                        const icon = document.createElement('i');
-                        icon.className = 'fas fa-map-marker-alt';
-                        icon.style.color = '#3388ff';
-                        icon.style.marginRight = '10px';
-                        icon.style.cursor = 'pointer';
-                        icon.addEventListener('click', () => {
-                            map.flyTo(marker.getLatLng(), 15);
-                        });
-
-                        // Текст точки (редактируемый)
-                        const textSpan = document.createElement('span');
-                        textSpan.textContent = pointNames[index];
-                        textSpan.style.cursor = 'text';
-                        textSpan.style.flex = '1';
-                        textSpan.addEventListener('dblclick', () => {
-                            textSpan.contentEditable = true;
-                            textSpan.focus();
-                        });
-                        textSpan.addEventListener('blur', () => {
-                            textSpan.contentEditable = false;
-                            const newName = textSpan.textContent.trim();
-                            pointNames[index] = newName ? newName : `Точка ${index + 1}`;
-                            updateDistanceList(); // Обновляем список расстояний при изменении имени
-                            updateTitle(); // Update title if needed
-                        });
-                        textSpan.addEventListener('keyup', (e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                textSpan.blur();
-                            }
-                        });
-
-                        pointItem.appendChild(icon);
-                        pointItem.appendChild(textSpan);
-                        pointsList.appendChild(pointItem);
-                    });
-                }
-            }
-
-            // Function to update distance list in "Протяженность" tab
-            function updateDistanceList() {
-                const distanceList = document.querySelector('#tab-content-distance .days-list');
-                if (!distanceList) return;
-
-                distanceList.innerHTML = '';
-
-                if (markers.length < 2 || !routeData || !routeData.segments) {
-                    const emptyItem = document.createElement('div');
-                    emptyItem.className = 'day-item';
-                    emptyItem.textContent = 'Нет данных';
-                    distanceList.appendChild(emptyItem);
-                    return;
-                }
-
-                let totalDistance = 0;
-
-                routeData.segments.forEach((seg, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'day-item';
-                    const name1 = pointNames[index];
-                    const name2 = pointNames[index + 1];
-                    let dist = seg.distance || '0 км';
-                    let d = parseFloat(dist);
-                    if (isNaN(d) || d === 0) {
-                        const latlng1 = markers[index].getLatLng();
-                        const latlng2 = markers[index + 1].getLatLng();
-                        const calcDist = (latlng1.distanceTo(latlng2) / 1000).toFixed(2);
-                        dist = calcDist;
-                        d = parseFloat(calcDist);
-                    }
-                    totalDistance += d;
-                    item.textContent = `${name1}:${name2} - ${dist} км`;
-                    distanceList.appendChild(item);
-                });
-
-                // Добавляем общую длину в конец списка
-                const totalItem = document.createElement('div');
-                totalItem.className = 'day-item total-distance';
-                totalItem.textContent = `Общая протяженность: ${totalDistance.toFixed(2)} км`;
-                distanceList.appendChild(totalItem);
-            }
-
-            // Function to get current tab ID
-            function getCurrentTabId() {
-                const activeTab = document.querySelector('.nav-tab.active');
-                if (!activeTab) return null;
-                const index = Array.from(document.querySelectorAll('.nav-tab')).indexOf(activeTab);
-                if (index === 0) return null;
-                return index === 1 ? 'days' : index === 2 ? 'points' : 'distance';
-            }
-
-            // Function to update title based on current tab
-            function updateTitle() {
-                const tabId = getCurrentTabId();
-                if (tabId === 'distance') {
-                    let totalDistNum = 0;
-                    if (routeData && routeData.segments && markers.length >= 2) {
-                        routeData.segments.forEach((seg, i) => {
-                            let d = parseFloat(seg.distance || 0);
-                            if (isNaN(d) || d === 0) {
-                                const latlng1 = markers[i].getLatLng();
-                                const latlng2 = markers[i + 1].getLatLng();
-                                d = latlng1.distanceTo(latlng2) / 1000;
-                            }
-                            totalDistNum += d;
-                        });
-                    }
-                    const totalDist = totalDistNum.toFixed(2) + ' км';
-                    modalTitle.textContent = `Общее расстояние - ${totalDist}`;
-                } else {
-                    modalTitle.textContent = routeName;
-                }
-            }
-
-            // КНОПКА УБРАТЬ МЕТКУ
-            const modalActions = document.querySelector('.modal-actions');
-            // Проверяем, нет ли уже кнопки, чтобы не дублировать
-            if (!document.getElementById('clear-btn-custom')) {
-                const clearBtn = document.createElement('button');
-                clearBtn.id = 'clear-btn-custom';
-                clearBtn.className = 'action-btn secondary';
-                clearBtn.textContent = 'убрать метку';
-                clearBtn.onclick = async () => {
-                    if (markers.length > 0) {
-                        const lastMarker = markers.pop();
-                        map.removeLayer(lastMarker);
-                        pointNames.pop();
-                        updatePointsList();
-                        if (markers.length >= 2) {
-                            await buildRoute();
-                        } else {
-                            if (routeLayer) {
-                                map.removeLayer(routeLayer);
-                                routeLayer = null;
-                            }
-                            dashedLayers.forEach(d => map.removeLayer(d));
-                            dashedLayers = [];
-                            routeData = null;
-                        }
-                        updateDistanceList();
-                        updateTitle();
-                    }
-                };
-                modalActions.prepend(clearBtn); // Добавляем кнопку в начало
+              // Активируем первый день
+              if (daysList.firstChild) {
+                daysList.firstChild.classList.add("active");
+              }
             } else {
-                const existingClearBtn = document.getElementById('clear-btn-custom');
-                existingClearBtn.textContent = 'убрать метку';
-                existingClearBtn.onclick = async () => {
-                    if (markers.length > 0) {
-                        const lastMarker = markers.pop();
-                        map.removeLayer(lastMarker);
-                        pointNames.pop();
-                        updatePointsList();
-                        if (markers.length >= 2) {
-                            await buildRoute();
-                        } else {
-                            if (routeLayer) {
-                                map.removeLayer(routeLayer);
-                                routeLayer = null;
-                            }
-                            dashedLayers.forEach(d => map.removeLayer(d));
-                            dashedLayers = [];
-                            routeData = null;
-                        }
-                        updateDistanceList();
-                        updateTitle();
-                    }
-                };
+              // Если расписания нет совсем, оставляем "День 1" (который там есть по умолчанию в HTML)
+              // Или пересоздаем его, если список был очищен
+              const daysList = document.querySelector(
+                "#tab-content-days .days-list",
+              );
+              if (daysList.children.length === 0) {
+                const day = createDayElement("День 1");
+                daysList.appendChild(day);
+                day.classList.add("active");
+              }
             }
 
+            // 4. Снаряжение
+            if (data.gear && Array.isArray(data.gear) && data.gear.length > 0) {
+              const gearList = document.querySelector(
+                "#tab-content-gear .days-list",
+              );
+              gearList.innerHTML = ""; // Очищаем дефолтный текст
 
-
-
-            // Tab switching logic
-            const navTabs = document.querySelectorAll('.nav-tab');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            navTabs.forEach((tab, index) => {
-                tab.addEventListener('click', function () {
-                    navTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Hide all tab contents
-                    tabContents.forEach(content => content.style.display = 'none');
-
-                    // Show the corresponding content (skip the first tab if it's close button)
-                    if (index === 0) {
-                        // Assuming first tab is close or something else, do nothing or handle close
-                        console.log('Закрыть или другая логика');
-                        return;
-                    }
-
-                    const tabId = index === 1 ? 'days' : index === 2 ? 'points' : 'distance';
-                    document.getElementById(`tab-content-${tabId}`).style.display = 'block';
-
-                    updateTitle();
-                });
-            });
-
-            // Initialize control buttons for each tab content
-            const allControlBtns = document.querySelectorAll('.tab-content .control-btn');
-            allControlBtns.forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const controls = this.closest('.modal-controls');
-                    controls.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-
-            // Updated initDayControls to handle records as well
-            function initDayControls(tabContent) {
-                const addDayBtn = tabContent.querySelector('.control-btn:nth-child(1)');
-                const removeDayBtn = tabContent.querySelector('.control-btn:nth-child(2)');
-                const addRecordBtn = tabContent.querySelector('.control-btn:nth-child(3)');
-                const removeRecordBtn = tabContent.querySelector('.control-btn:nth-child(4)');
-                const daysList = tabContent.querySelector('.days-list');
-                let dayCount = 1;
-
-                // Function to create a new day item with record list
-                function createDayItem(dayNumber) {
-                    const newDay = document.createElement('div');
-                    newDay.className = 'day-item';
-                    newDay.dataset.dayNumber = dayNumber;
-
-                    // Day header
-                    const dayHeader = document.createElement('div');
-                    dayHeader.className = 'day-header';
-                    dayHeader.textContent = `День ${dayNumber}`;
-                    newDay.appendChild(dayHeader);
-
-                    // Record list container
-                    const recordList = document.createElement('div');
-                    recordList.className = 'record-list';
-                    newDay.appendChild(recordList);
-
-                    // Click to select day
-                    newDay.addEventListener('click', function () {
-                        // Remove active from all days
-                        daysList.querySelectorAll('.day-item').forEach(item => item.classList.remove('active'));
-                        // Add active to this day
-                        this.classList.add('active');
-                    });
-
-                    return newDay;
+              data.gear.forEach((gearItem) => {
+                // Проверяем формат данных (может быть строка или объект)
+                let gearName = "";
+                if (typeof gearItem === "string") {
+                  gearName = gearItem;
+                } else if (gearItem && gearItem.name) {
+                  gearName = gearItem.name;
                 }
 
-                // Initial day
-                daysList.innerHTML = '';
-                const initialDay = createDayItem(dayCount);
-                daysList.appendChild(initialDay);
-                initialDay.classList.add('active'); // Make first day active by default
+                if (gearName) {
+                  const d = document.createElement("div");
+                  d.className = "day-item";
+                  d.style.display = "flex";
+                  d.style.alignItems = "center";
+                  d.style.justifyContent = "space-between";
+                  d.style.padding = "8px";
+                  d.style.marginBottom = "5px";
+                  d.style.border = "1px solid #eee";
+                  d.style.borderRadius = "4px";
 
-                // Add day
-                addDayBtn.addEventListener('click', function () {
-                    dayCount++;
-                    const newDay = createDayItem(dayCount);
-                    daysList.appendChild(newDay);
-                });
+                  const textSpan = document.createElement("span");
+                  textSpan.textContent = gearName;
+                  textSpan.contentEditable = true;
+                  textSpan.style.flex = "1";
+                  textSpan.style.padding = "5px";
+                  textSpan.style.minWidth = "150px";
+                  textSpan.style.outline = "none";
 
-                // Remove day
-                removeDayBtn.addEventListener('click', function () {
-                    if (dayCount > 1) {
-                        daysList.removeChild(daysList.lastChild);
-                        dayCount--;
-                        // Ensure there's always an active day
-                        const remainingDays = daysList.querySelectorAll('.day-item');
-                        if (remainingDays.length > 0 && !daysList.querySelector('.day-item.active')) {
-                            remainingDays[remainingDays.length - 1].classList.add('active');
-                        }
+                  // Подсветка при редактировании
+                  textSpan.addEventListener("focus", function () {
+                    this.style.backgroundColor = "#f0f0f03b";
+                    this.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
+                  });
+
+                  textSpan.addEventListener("blur", function () {
+                    this.style.backgroundColor = "transparent";
+                    this.style.border = "none";
+                  });
+
+                  // Кнопка удаления
+                  const delBtn = document.createElement("button");
+                  delBtn.innerHTML = "&times;";
+                  delBtn.style.color = "red";
+                  delBtn.style.border = "none";
+                  delBtn.style.background = "transparent";
+                  delBtn.style.cursor = "pointer";
+                  delBtn.style.marginLeft = "10px";
+                  delBtn.style.fontSize = "18px";
+                  delBtn.style.width = "24px";
+                  delBtn.style.height = "24px";
+                  delBtn.style.display = "flex";
+                  delBtn.style.alignItems = "center";
+                  delBtn.style.justifyContent = "center";
+                  delBtn.onclick = () => {
+                    d.remove();
+                    // Если удалили все элементы, показываем заглушку
+                    if (gearList.children.length === 0) {
+                      gearList.innerHTML =
+                        '<div class="day-item">Список снаряжения пуст</div>';
                     }
-                });
+                  };
 
-                // Function to show marker list popover
-                function showMarkerList(selectorElement) {
-                    if (pointNames.length === 0) {
-                        alert('Нет доступных меток');
-                        return;
-                    }
-
-                    const popover = document.createElement('div');
-                    popover.className = 'popover';
-                    popover.style.position = 'absolute';
-                    popover.style.background = 'white';
-                    popover.style.border = '1px solid #ccc';
-                    popover.style.padding = '5px';
-                    popover.style.zIndex = '1000';
-                    popover.style.maxHeight = '200px';
-                    popover.style.overflowY = 'auto';
-
-                    pointNames.forEach((name, index) => {
-                        const option = document.createElement('div');
-                        option.textContent = name;
-                        option.style.cursor = 'pointer';
-                        option.style.padding = '5px';
-                        option.addEventListener('mouseover', () => {
-                            option.style.background = '#f0f0f0';
-                        });
-                        option.addEventListener('mouseout', () => {
-                            option.style.background = 'white';
-                        });
-                        option.addEventListener('click', () => {
-                            // Replace selector with icon and name
-                            selectorElement.innerHTML = '';
-                            const icon = document.createElement('i');
-                            icon.className = 'fas fa-map-marker-alt';
-                            icon.style.color = '#3388ff';
-                            icon.style.marginRight = '5px';
-                            const nameSpan = document.createElement('span');
-                            nameSpan.textContent = name;
-                            selectorElement.appendChild(icon);
-                            selectorElement.appendChild(nameSpan);
-                            // Remove popover
-                            popover.remove();
-                        });
-                        popover.appendChild(option);
-                    });
-
-                    // Position popover below the selector
-                    document.body.appendChild(popover);
-                    const rect = selectorElement.getBoundingClientRect();
-                    popover.style.left = `${rect.left + window.scrollX}px`;
-                    popover.style.top = `${rect.bottom + window.scrollY}px`;
-
-                    // Remove popover on outside click
-                    const outsideClick = (e) => {
-                        if (!popover.contains(e.target) && e.target !== selectorElement) {
-                            popover.remove();
-                            document.removeEventListener('click', outsideClick);
-                        }
-                    };
-                    document.addEventListener('click', outsideClick);
+                  d.appendChild(textSpan);
+                  d.appendChild(delBtn);
+                  gearList.appendChild(d);
                 }
-
-                // Function to create a new record item
-                function createRecordItem() {
-                    const newRecord = document.createElement('div');
-                    newRecord.className = 'record-item';
-                    newRecord.style.display = 'flex';
-                    newRecord.style.alignItems = 'center';
-                    newRecord.style.marginTop = '5px';
-
-                    // Marker selector (initially empty square)
-                    const selector = document.createElement('div');
-                    selector.className = 'marker-selector';
-                    selector.innerHTML = '&#9744;'; // Unicode for empty checkbox square
-                    selector.style.cursor = 'pointer';
-                    selector.style.marginRight = '10px';
-                    selector.style.fontSize = '16px';
-                    selector.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        showMarkerList(this);
-                    });
-                    newRecord.appendChild(selector);
-
-                    // Dash
-                    const dash = document.createElement('span');
-                    dash.textContent = ' - ';
-                    newRecord.appendChild(dash);
-
-                    // Time input (editable time in format 0:00)
-                    const timeInput = document.createElement('input');
-                    timeInput.type = 'time';
-                    timeInput.value = '00:00'; // Default to 00:00
-                    timeInput.style.border = 'none';
-                    timeInput.style.background = 'transparent';
-                    timeInput.style.width = '80px'; // Increased width to ensure all digits are visible
-                    timeInput.style.color = 'inherit'; // Inherit color from parent to match "День 1" text color
-                    newRecord.appendChild(timeInput);
-
-                    return newRecord;
-                }
-
-                // Add record to active day
-                addRecordBtn.addEventListener('click', function () {
-                    const activeDay = daysList.querySelector('.day-item.active');
-                    if (activeDay) {
-                        const recordList = activeDay.querySelector('.record-list');
-                        const newRecord = createRecordItem();
-                        recordList.appendChild(newRecord);
-                    } else {
-                        alert('Выберите день для добавления записи');
-                    }
-                });
-
-                // Remove last record from active day
-                removeRecordBtn.addEventListener('click', function () {
-                    const activeDay = daysList.querySelector('.day-item.active');
-                    if (activeDay) {
-                        const recordList = activeDay.querySelector('.record-list');
-                        if (recordList.lastChild) {
-                            recordList.removeChild(recordList.lastChild);
-                        }
-                    } else {
-                        alert('Выберите день для удаления записи');
-                    }
-                });
+              });
             }
 
-            // Initialize for tabs days and cost
-            const tabContentsForDays = document.querySelectorAll('.tab-content:not(#tab-content-points):not(#tab-content-distance)');
-            tabContentsForDays.forEach(initDayControls);
+            // 5. Расходы (аналогично для costs)
+            if (
+              data.costs &&
+              Array.isArray(data.costs) &&
+              data.costs.length > 0
+            ) {
+              const costList = document.querySelector(
+                "#tab-content-cost .days-list",
+              );
+              costList.innerHTML = ""; // Очищаем дефолтный текст
 
-            // Search input functionality
-            async function handleSearch() {
-                const searchInput = document.querySelector('.search-input');
-                const query = searchInput.value.trim();
-                if (!query) return;
+              data.costs.forEach((costItem) => {
+                if (costItem && costItem.name) {
+                  const d = document.createElement("div");
+                  d.className = "day-item";
+                  d.style.display = "flex";
+                  d.style.alignItems = "center";
+                  d.style.gap = "10px";
+                  d.style.padding = "8px";
+                  d.style.marginBottom = "5px";
+                  d.style.border = "1px solid #eee";
+                  d.style.borderRadius = "4px";
 
-                try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
-                    const data = await response.json();
-                    if (data.length > 0) {
-                        const { lat, lon } = data[0];
-                        map.flyTo([lat, lon], 12);
-                    } else {
-                        alert('Такое место не обнаружено');
+                  d.innerHTML = `
+                <input placeholder="Название" value="${costItem.name}" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                <input type="number" placeholder="0" value="${costItem.amount || 0}" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
+            `;
+
+                  // Добавляем обработчик удаления
+                  const removeBtn = d.querySelector("button");
+                  removeBtn.onclick = () => {
+                    d.remove();
+                    // Если удалили все элементы, показываем заглушку
+                    if (costList.children.length === 0) {
+                      costList.innerHTML =
+                        '<div class="day-item">Список расходов пуст</div>';
                     }
-                } catch (error) {
-                    console.error('Ошибка поиска:', error);
-                    alert('Ошибка при поиске места');
+                  };
+
+                  costList.appendChild(d);
                 }
+              });
             }
+          } catch (e) {
+            console.error("Ошибка загрузки маршрута:", e);
+          }
+        }
 
-            // Обработка Enter в поле ввода
-            const searchInput = document.querySelector('.search-input');
-            searchInput.addEventListener('keyup', function (e) {
-                if (e.key === 'Enter') {
-                    handleSearch();
+        loadRouteFromUrl();
+
+        // --- 12. ПОИСК ---
+        async function handleSearch() {
+          const val = document.querySelector(".search-input").value;
+          if (!val) return;
+          try {
+            const r = await fetch(
+              `https://nominatim.openstreetmap.org/search?q=${val}&format=json&limit=1`,
+            );
+            const d = await r.json();
+            if (d.length) map.flyTo([d[0].lat, d[0].lon], 13);
+            else alert("Не найдено");
+          } catch (e) {
+            alert("Ошибка поиска");
+          }
+        }
+        document.querySelector(".search-btn-submit").onclick = handleSearch;
+        document.querySelector(".search-input").onkeyup = (e) => {
+          if (e.key === "Enter") handleSearch();
+        };
+
+        // --- 13. УДАЛЕНИЕ ПОСЛЕДНЕЙ МЕТКИ ---
+        const modalActions = document.querySelector(".modal-actions");
+        const clearBtn = document.createElement("button");
+        clearBtn.className = "action-btn secondary";
+        clearBtn.textContent = "Убрать метку";
+        clearBtn.onclick = async () => {
+          if (markers.length > 0) {
+            const m = markers.pop();
+            map.removeLayer(m);
+            pointNames.pop();
+            updatePointsList();
+            await recalculateRoute();
+          }
+        };
+        modalActions.insertBefore(clearBtn, modalActions.firstChild);
+        // Удаляем кнопку "Очистить" из верстки, если она была дефолтной, или скрываем
+        if (document.getElementById("clear-btn-custom"))
+          document.getElementById("clear-btn-custom").remove();
+
+        // --- 14. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ---
+        const navTabs = document.querySelectorAll(".nav-tab");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        navTabs.forEach((tab, i) => {
+          tab.onclick = () => {
+            // Убираем активный класс у всех кнопок и скрываем контент
+            navTabs.forEach((t) => t.classList.remove("active"));
+            tabContents.forEach((c) => (c.style.display = "none"));
+
+            // Добавляем активный класс текущей кнопке
+            tab.classList.add("active");
+
+            // Индексы соответствуют: 0-info, 1-days, 2-points, 3-distance, 4-gear, 5-cost
+            const ids = ["info", "days", "points", "distance", "gear", "cost"];
+            const targetId = ids[i];
+
+            if (targetId) {
+              const tabContent = document.getElementById(
+                `tab-content-${targetId}`,
+              );
+              if (tabContent) {
+                tabContent.style.display = "block";
+
+                // Специфическая логика для вкладки дистанции
+                if (targetId === "distance") {
+                  updateDistanceList();
                 }
-            });
-
-            // Обработка клика по лупе
-            const searchBtn = document.querySelector('.search-btn-submit');
-            searchBtn.addEventListener('click', handleSearch);
-
-
-            // Modal actions
-            const saveBtn = document.querySelector('.action-btn.secondary'); // Кнопка очистить
-            const exportBtn = document.querySelector('.action-btn.primary'); // Кнопка сохранить
-
-            // ОБНОВЛЕННАЯ ЛОГИКА СОХРАНЕНИЯ
-            exportBtn.addEventListener('click', async function () {
-                if (markers.length === 0) {
-                    alert('Поставьте хотя бы одну метку перед сохранением.');
-                    return;
-                }
-
-                // 1. Сбор данных о точках (для Custom_Route)
-                const pointsData = markers.map(m => {
-                    const ll = m.getLatLng();
-                    return { lat: ll.lat, lng: ll.lng };
-                });
-
-                // 2. Сбор данных РАСПИСАНИЯ (для Route_Schedule)
-                const scheduleData = [];
-                // Находим все дни
-                const dayItems = document.querySelectorAll('#tab-content-days .days-list > .day-item');
-
-                const numDays = dayItems.length; // Вычисляем количество дней
-
-                // Для простоты считаем, что День 1 = Сегодня. 
-                const today = new Date();
-
-                dayItems.forEach((dayEl, index) => {
-                    // Вычисляем дату: Сегодня + index дней
-                    const dateObj = new Date(today);
-                    dateObj.setDate(today.getDate() + index);
-                    const dateStr = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
-
-                    // Ищем записи внутри дня
-                    const records = dayEl.querySelectorAll('.record-item');
-                    records.forEach(rec => {
-                        // Ищем выбранное имя точки
-                        const markerNameSpan = rec.querySelector('.marker-selector span');
-                        if (markerNameSpan) {
-                            const markerName = markerNameSpan.textContent;
-                            // Находим индекс этой точки в массиве pointNames
-                            // Добавляем 1, так как в БД WaiPoint1...20
-                            const pointIndex = pointNames.indexOf(markerName) + 1;
-
-                            const timeVal = rec.querySelector('input[type="time"]').value;
-
-                            if (pointIndex > 0) {
-                                scheduleData.push({
-                                    point_index: pointIndex,
-                                    visit_date: dateStr,
-                                    visit_time: timeVal + ":00" // Добавляем секунды для формата TIME
-                                });
-                            }
-                        }
-                    });
-                });
-
-                // 3. Вычисление длины 
-                let totalMeters = 0;
-                let durationStr = "Не рассчитано";
-
-                if (routeData && routeData.distance) {
-                    const distFloat = parseFloat(routeData.distance);
-                    totalMeters = Math.round(distFloat * 1000);
-                    durationStr = routeData.duration || "";
-                } else {
-                    for (let i = 0; i < markers.length - 1; i++) {
-                        totalMeters += markers[i].getLatLng().distanceTo(markers[i + 1].getLatLng());
-                    }
-                    totalMeters = Math.round(totalMeters);
-                }
-                const center = map.getCenter(); // <--- Получаем центр карты
-                // 4. Формируем тело запроса
-                const payload = {
-                    name: routeName,
-                    description: "Пользовательский маршрут",
-                    length: totalMeters,
-                    duration: durationStr,
-                    days: numDays, // Добавляем количество дней
-                    points: pointsData,
-                    schedule: scheduleData,
-                    map_zoom: map.getZoom(),
-                    map_center: `${center.lat},${center.lng}`
-                };
-
-                // 5. Отправка на сервер
-                try {
-                    exportBtn.textContent = "Сохранение...";
-                    exportBtn.disabled = true;
-
-                    const response = await fetch('/api/save-custom-route', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        // Используем message, который прислал сервер ("Обновлен" или "Создан")
-                        alert(result.message || 'Маршрут успешно сохранен!');
-
-                        // Опционально: можно перенаправить пользователя в ЛК после сохранения
-                        // window.location.href = '/lk'; 
-                    } else {
-                        alert('Ошибка: ' + (result.error || 'Не удалось сохранить'));
-                    }
-                } catch (error) {
-                    console.error('Ошибка сети:', error);
-                    alert('Ошибка сети при сохранении.');
-                } finally {
-                    exportBtn.textContent = "Сохранить";
-                    exportBtn.disabled = false;
-                }
-            });
-            const menuBtn = document.querySelector('.menu-btn');
-            let isTransitioning = false; // Флаг, чтобы избежать двойных кликов во время анимации
-
-            menuBtn.addEventListener('click', function () {
-                if (isTransitioning) return; // Блокируем клики пока идет анимация
-
-                if (!container.classList.contains('collapsed')) {
-                    // --- СВОРАЧИВАНИЕ ---
-
-                    // 1. Фиксируем текущую высоту в пикселях перед сворачиванием, 
-                    // чтобы анимация началась с конкретного значения, а не с "auto"
-                    container.style.height = container.scrollHeight + 'px';
-
-                    // Форсируем перерисовку (reflow), чтобы браузер "увидел" высоту
-                    container.offsetHeight;
-
-                    // 2. Добавляем класс, который включает height: 73px !important
-                    container.classList.add('collapsed');
-
-                    // 3. Очищаем инлайн стиль, чтобы класс CSS сработал приоритетно
-                    // (хотя из-за !important в CSS это может быть не обязательно, но так чище)
-                    container.style.height = '';
-
-                } else {
-                    // --- РАЗВОРАЧИВАНИЕ ---
-
-                    isTransitioning = true; // Начало анимации
-
-                    // 1. Убираем класс свернутого состояния
-                    container.classList.remove('collapsed');
-
-                    // 2. Вычисляем, какой высоты должен быть контент сейчас
-                    const targetHeight = container.scrollHeight;
-
-                    // 3. Устанавливаем эту высоту, чтобы запустить CSS transition
-                    container.style.height = targetHeight + 'px';
-
-                    // 4. Ждем окончания анимации (3000мс как у вас в CSS), 
-                    // а затем сбрасываем высоту в 'auto'
-                    setTimeout(() => {
-                        container.style.height = 'auto';
-                        isTransitioning = false; // Анимация закончилась
-                    }, 50);
-                }
-            });
-
-
-            menuBtn.addEventListener('click', function () {
-                if (isTransitioning) return; // Блокируем клики пока идет анимация
-
-                if (!container.classList.contains('collapsed')) {
-                    // --- СВОРАЧИВАНИЕ ---
-
-                    // 1. Фиксируем текущую высоту в пикселях перед сворачиванием, 
-                    // чтобы анимация началась с конкретного значения, а не с "auto"
-                    container.style.height = container.scrollHeight + 'px';
-
-                    // Форсируем перерисовку (reflow), чтобы браузер "увидел" высоту
-                    container.offsetHeight;
-
-                    // 2. Добавляем класс, который включает height: 73px !important
-                    container.classList.add('collapsed');
-
-                    // 3. Очищаем инлайн стиль, чтобы класс CSS сработал приоритетно
-                    // (хотя из-за !important в CSS это может быть не обязательно, но так чище)
-                    container.style.height = '';
-
-                } else {
-                    // --- РАЗВОРАЧИВАНИЕ ---
-
-                    isTransitioning = true; // Начало анимации
-
-                    // 1. Убираем класс свернутого состояния
-                    container.classList.remove('collapsed');
-
-                    // 2. Вычисляем, какой высоты должен быть контент сейчас
-                    const targetHeight = container.scrollHeight;
-
-                    // 3. Устанавливаем эту высоту, чтобы запустить CSS transition
-                    container.style.height = targetHeight + 'px';
-
-                    // 4. Ждем окончания анимации (3000мс как у вас в CSS), 
-                    // а затем сбрасываем высоту в 'auto'
-                    setTimeout(() => {
-                        container.style.height = 'auto';
-                        isTransitioning = false; // Анимация закончилась
-                    }, 50);
-                }
-            });
-
-            // Дополнительно: Обработка переключения вкладок
-            // Чтобы окно подстраивалось под высоту вкладки, если оно не свернуто
-            const tabsForResize = document.querySelectorAll('.nav-tab');
-            tabsForResize.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    if (!container.classList.contains('collapsed')) {
-                        // Если мы не свернуты, сбрасываем высоту в auto, 
-                        // чтобы окно охватило новый контент вкладки
-                        container.style.height = 'auto';
-                    }
-                });
-            });
-            // Close modal on overlay click
-            const overlay = document.querySelector('.overlay');
-            const modal = document.querySelector('.modal');
-
-            overlay.addEventListener('click', function (e) {
-                if (e.target === overlay) {
-                    console.log('Закрыть модальное окно');
-                }
-            });
-
-
-            const profileBtn = document.querySelector('.profile-btn');
-
-            profileBtn.addEventListener('click', function () {
-                window.location.href = 'lk';
-            });
-
-            // Draggable functionality
-            const header = document.querySelector('.header');
-            let isDragging = false;
-            let offsetX, offsetY;
-
-            header.addEventListener('mousedown', (e) => {
-                if (e.target.closest('.menu-btn, .search-container, .profile-btn')) return; // Prevent drag on interactive elements
-                isDragging = true;
-                const rect = container.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;
-                offsetY = e.clientY - rect.top;
-                container.style.position = 'absolute';
-                container.style.left = `${rect.left}px`;
-                container.style.top = `${rect.top}px`;
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    container.style.left = `${e.clientX - offsetX}px`;
-                    container.style.top = `${e.clientY - offsetY}px`;
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-
-            // Resizable functionality
-            const resizer = document.querySelector('.resizer');
-            let isResizing = false;
-            let startX, startY, startWidth, startHeight;
-
-            resizer.addEventListener('mousedown', (e) => {
-                isResizing = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startWidth = parseInt(document.defaultView.getComputedStyle(container).width, 10);
-                startHeight = parseInt(document.defaultView.getComputedStyle(container).height, 10);
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                // Было: if (isResizing && !container.classList.contains('collapsed'))
-                if (isResizing) {
-                    const height = Math.max(400, startHeight + e.clientY - startY);
-                    container.style.height = `${height}px`;
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                isResizing = false;
-            });
-
-
-            async function loadRouteFromUrl() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const routeId = urlParams.get('id');
-                const routeType = urlParams.get('type');
-
-                if (!routeId || !routeType) return;
-
-                console.log(`Загрузка маршрута: ID=${routeId}, Type=${routeType}`);
-
-                try {
-                    const response = await fetch(`/api/get-route-details?id=${routeId}&type=${routeType}`);
-                    const data = await response.json();
-
-                    if (!response.ok) {
-                        alert('Ошибка загрузки маршрута: ' + (data.error || 'Неизвестная ошибка'));
-                        return;
-                    }
-
-                    // 1. Устанавливаем имя
-                    routeName = data.name || 'Маршрут';
-                    if (routeType === 'standard') {
-                        routeName += ' (Мой)';
-                    }
-                    document.querySelector('.modal-title').textContent = routeName;
-
-                    // 2. Очищаем текущие маркеры
-                    markers.forEach(m => map.removeLayer(m));
-                    markers = [];
-                    pointNames = [];
-
-                    // 3. Ставим точки на карту
-                    if (data.points && data.points.length > 0) {
-                        const group = new L.featureGroup();
-
-                        data.points.forEach((pt, index) => {
-                            const lat = pt.lat;
-                            const lng = pt.lng;
-
-                            const marker = L.marker([lat, lng]).addTo(map);
-                            marker.bindPopup(pt.name || "Точка маршрута");
-
-                            markers.push(marker);
-                            pointNames.push(pt.name || `Точка ${index + 1}`);
-
-                            group.addLayer(marker);
-                        });
-
-                        // Обновляем списки в интерфейсе
-                        updatePointsList();
-                        map.fitBounds(group.getBounds().pad(0.1));
-
-
-                        if (data.map_zoom && data.map_center) {
-                            // 1. Если есть сохраненный зум и центр - используем их
-                            const [lat, lng] = data.map_center.split(',').map(Number);
-                            map.setView([lat, lng], data.map_zoom);
-                        } else {
-                            // 2. Иначе (старые маршруты) - подгоняем границы под точки
-                            if (markers.length > 0) {
-                                map.fitBounds(group.getBounds().pad(0.1));
-                            }
-                        }
-
-
-
-                        // 4. Строим линию маршрута
-                        if (markers.length >= 2) {
-                            await buildRoute();
-                            updateDistanceList();
-                            updateTitle();
-                        }
-                    }
-
-                    // 5. Загружаем и обновляем расписание (вкладка "Дни"), если есть
-                    if (data.schedule && data.schedule.length > 0) {
-                        const daysList = document.querySelector('#tab-content-days .days-list');
-                        daysList.innerHTML = ''; // Очищаем
-                        data.schedule.forEach(sch => {
-                            const dayItem = document.createElement('div');
-                            dayItem.className = 'day-item';
-                            dayItem.textContent = `День ${sch.point_index}: ${sch.visit_date} ${sch.visit_time} (${sch.note || ''})`;
-                            daysList.appendChild(dayItem);
-                        });
-                    }
-
-                } catch (error) {
-                    console.error('Ошибка при инициализации маршрута:', error);
-                }
+              }
+              updateTitle();
             }
-            // Запускаем загрузку
-            loadRouteFromUrl();
-
-
-
+          };
         });
-    </script>
-</body>
 
+        function updateTitle() {
+          const active = document.querySelector(".nav-tab.active");
+          if (active && active.textContent === "Протяженность") {
+            // При заходе на вкладку "Протяженность" обновляем список
+            updateDistanceList();
+
+            if (routeData && routeData.distance) {
+              modalTitle.textContent = `Дистанция: ${routeData.distance}`;
+            } else if (markers.length >= 2) {
+              // Рассчитываем общее расстояние по прямой для заголовка
+              let totalDistance = 0;
+              for (let i = 0; i < markers.length - 1; i++) {
+                const latlng1 = markers[i].getLatLng();
+                const latlng2 = markers[i + 1].getLatLng();
+                totalDistance += latlng1.distanceTo(latlng2) / 1000;
+              }
+              modalTitle.textContent = `Дистанция: ${totalDistance.toFixed(2)} км`;
+            } else {
+              modalTitle.textContent = routeName;
+            }
+          } else {
+            modalTitle.textContent = routeName;
+          }
+        }
+
+        // --- 15. ПЕРЕХОД В ЛК ---
+        document.querySelector(".profile-btn").onclick = () =>
+          (window.location.href = "/lk");
+
+        function initianDragAndDropModalWindow() {
+          const header = document.querySelector(".header");
+
+          let isDragging = false;
+          let currentX,
+            currentY,
+            initialX = 0,
+            initialY = 0;
+          let xOffset = 0,
+            yOffset = 0;
+
+          header.addEventListener("mousedown", dragStart);
+          document.addEventListener("mousemove", drag);
+          document.addEventListener("mouseup", dragEnd);
+
+          function dragStart(e) {
+            if (e.target.closest("button") || e.target.closest("input")) return;
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            if (header.contains(e.target)) isDragging = true;
+          }
+
+          function drag(e) {
+            if (isDragging) {
+              e.preventDefault();
+              currentX = e.clientX - initialX;
+              currentY = e.clientY - initialY;
+              xOffset = currentX;
+              yOffset = currentY;
+              container.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+            }
+          }
+
+          function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+          }
+        }
+
+        initianDragAndDropModalWindow();
+
+        // --- 16. СВОРАЧИВАНИЕ ОКНА (Оставляем вашу логику) ---
+        const menuBtn = document.querySelector(".menu-btn");
+        menuBtn.onclick = () => {
+          container.classList.toggle("collapsed");
+          if (container.classList.contains("collapsed"))
+            container.style.height = "60px";
+          else container.style.height = "auto";
+        };
+
+        // Инициализация кнопок Снаряжения и Стоимости
+        ["gear", "cost"].forEach((type) => {
+          const blk = document.getElementById(`tab-content-${type}`);
+          if (blk) {
+            const btns = blk.querySelectorAll(".control-btn");
+            const list = blk.querySelector(".days-list");
+            if (btns.length >= 2) {
+              btns[0].onclick = () => {
+                // Add
+                const d = document.createElement("div");
+                d.className = "day-item";
+
+                if (type === "gear") {
+                  // Для снаряжения: редактируемый элемент с кнопкой удаления
+                  d.style.display = "flex";
+                  d.style.alignItems = "center";
+                  d.style.justifyContent = "space-between";
+                  d.style.padding = "8px";
+                  d.style.marginBottom = "5px";
+                  d.style.border = "1px solid #eee";
+                  d.style.borderRadius = "4px";
+
+                  const textSpan = document.createElement("span");
+                  textSpan.textContent = "Новая вещь";
+                  textSpan.contentEditable = true;
+                  textSpan.style.flex = "1";
+                  textSpan.style.padding = "5px";
+                  textSpan.style.minWidth = "150px";
+                  textSpan.style.outline = "none";
+
+                  // Подсветка при редактировании
+                  textSpan.addEventListener("focus", function () {
+                    this.style.backgroundColor = "#f0f0f03b";
+                    this.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
+                  });
+
+                  textSpan.addEventListener("blur", function () {
+                    this.style.backgroundColor = "transparent";
+                    this.style.border = "none";
+                  });
+
+                  // Кнопка удаления
+                  const delBtn = document.createElement("button");
+                  delBtn.innerHTML = "&times;";
+                  delBtn.style.color = "red";
+                  delBtn.style.border = "none";
+                  delBtn.style.background = "transparent";
+                  delBtn.style.cursor = "pointer";
+                  delBtn.style.marginLeft = "10px";
+                  delBtn.style.fontSize = "18px";
+                  delBtn.style.width = "24px";
+                  delBtn.style.height = "24px";
+                  delBtn.style.display = "flex";
+                  delBtn.style.alignItems = "center";
+                  delBtn.style.justifyContent = "center";
+                  delBtn.onclick = () => {
+                    d.remove();
+                    // Если удалили все элементы, показываем заглушку
+                    if (
+                      list.children.length === 1 &&
+                      list.firstChild.textContent.includes("пуст")
+                    ) {
+                      // Оставляем заглушку
+                    } else if (list.children.length === 0) {
+                      list.innerHTML =
+                        '<div class="day-item">Список снаряжения пуст</div>';
+                    }
+                  };
+
+                  d.appendChild(textSpan);
+                  d.appendChild(delBtn);
+                } else {
+                  // Для расходов: два инпута
+                  d.style.display = "flex";
+                  d.style.alignItems = "center";
+                  d.style.gap = "10px";
+                  d.style.padding = "8px";
+                  d.style.marginBottom = "5px";
+                  d.style.border = "1px solid #eee";
+                  d.style.borderRadius = "4px";
+
+                  d.innerHTML = `
+                        <input placeholder="Название" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                        <input type="number" placeholder="0" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                        <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
+                    `;
+
+                  // Добавляем обработчик удаления
+                  const removeBtn = d.querySelector("button");
+                  removeBtn.onclick = () => {
+                    d.remove();
+                    // Если удалили все элементы, показываем заглушку
+                    if (
+                      list.children.length === 1 &&
+                      list.firstChild.textContent.includes("пуст")
+                    ) {
+                      // Оставляем заглушку
+                    } else if (list.children.length === 0) {
+                      list.innerHTML =
+                        '<div class="day-item">Список расходов пуст</div>';
+                    }
+                  };
+                }
+
+                // Удаляем заглушку "пустой список" если она есть
+                if (
+                  list.children.length === 1 &&
+                  (list.firstChild.textContent.includes("пуст") ||
+                    list.firstChild.textContent.includes("Список"))
+                ) {
+                  list.innerHTML = "";
+                }
+
+                list.appendChild(d);
+              };
+
+              btns[1].onclick = () => {
+                // Remove - удаляем последний элемент
+                if (list.children.length > 0) {
+                  const lastChild = list.lastChild;
+                  if (
+                    !lastChild.textContent.includes("пуст") &&
+                    !lastChild.textContent.includes("Список")
+                  ) {
+                    lastChild.remove();
+
+                    // Если после удаления список пуст, показываем заглушку
+                    if (list.children.length === 0) {
+                      if (type === "gear") {
+                        list.innerHTML =
+                          '<div class="day-item">Список снаряжения пуст</div>';
+                      } else {
+                        list.innerHTML =
+                          '<div class="day-item">Список расходов пуст</div>';
+                      }
+                    }
+                  }
+                }
+              };
+            }
+          }
+        });
+      });
+
+      async function saveRoute() {
+        const formData = new FormData();
+
+        // Основные данные
+        formData.append("name", routeName);
+        formData.append(
+          "description",
+          document.getElementById("route-desc-area").value || "",
+        );
+        formData.append(
+          "length",
+          routeData ? parseFloat(routeData.distance) * 1000 : 0,
+        );
+        formData.append(
+          "duration",
+          routeData ? routeData.duration.replace(" ч", "") : "0",
+        );
+        formData.append(
+          "days",
+          document.querySelectorAll(".day-item").length || 1,
+        );
+
+        // Координаты карты
+        formData.append("map_zoom", map.getZoom());
+        const center = map.getCenter();
+        formData.append("map_center", `${center.lat},${center.lng}`);
+
+        // Точки (points)
+        formData.append(
+          "points",
+          JSON.stringify(
+            markers.map((m) => ({
+              lat: m.getLatLng().lat,
+              lng: m.getLatLng().lng,
+              name: pointNames[markers.indexOf(m)] || "",
+            })),
+          ),
+        );
+
+        // Расписание (schedule) - собираем из вкладки "Дни"
+        const schedule = [];
+        document.querySelectorAll(".day-item").forEach((day, dayIdx) => {
+          day.querySelectorAll(".record-item").forEach((rec, recIdx) => {
+            schedule.push({
+              point_index: recIdx + 1, // Или реальный индекс точки
+              visit_date: rec.querySelector(".date-input")?.value || "",
+              visit_time: rec.querySelector(".time-input")?.value || "",
+              note: rec.querySelector(".note-input")?.value || "",
+            });
+          });
+        });
+        formData.append("schedule", JSON.stringify(schedule));
+
+        // Снаряжение (gear)
+        const gear = [];
+        document
+          .querySelectorAll("#tab-content-gear .day-item")
+          .forEach((item) => {
+            const text = item.querySelector("span")?.textContent.trim();
+            if (text && text !== "Список снаряжения пуст")
+              gear.push({ name: text });
+          });
+        formData.append("gear", JSON.stringify(gear));
+
+        // Расходы (costs)
+        const costs = [];
+        document
+          .querySelectorAll("#tab-content-cost .day-item")
+          .forEach((item) => {
+            const name = item
+              .querySelector("input[placeholder='Название']")
+              ?.value.trim();
+            const amount =
+              parseFloat(item.querySelector("input[type='number']")?.value) ||
+              0;
+            if (name) costs.push({ name, amount });
+          });
+        formData.append("costs", JSON.stringify(costs));
+
+        // Организационный взнос (из модалки, если показана)
+        const orgCost = document.getElementById("org-cost-input")?.value || 0;
+        formData.append("cost_organization", orgCost);
+
+        // Фото
+        document.querySelectorAll(".photo-slot").forEach((slot, i) => {
+          const input = slot.querySelector(".photo-input");
+          if (input.files[0]) {
+            formData.append(`photo_${i}`, input.files[0]);
+          }
+        });
+
+        try {
+          const res = await fetch("/api/save-custom-route", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await res.json();
+          if (data.status === "ok") {
+            alert("Сохранено!");
+            // Обновляем URL с ID маршрута, чтобы при перезагрузке загрузилось
+            if (data.route_id) {
+              const newUrl = new URL(window.location);
+              newUrl.searchParams.set("id", data.route_id);
+              newUrl.searchParams.set("type", "custom");
+              window.history.pushState({}, "", newUrl);
+              // Можно перезагрузить данные, если нужно
+              loadRouteFromUrl();
+            }
+          } else {
+            alert(data.error || "Ошибка сохранения");
+          }
+        } catch (e) {
+          console.error("Ошибка:", e);
+          alert("Ошибка сохранения");
+        }
+      }
+      saveRoute();
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9c4208e99c65482d',t:'MTc2OTQ1MTczNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
 </html>

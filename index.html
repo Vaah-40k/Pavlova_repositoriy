@@ -1,218 +1,223 @@
 <!DOCTYPE html>
 <html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrekPlan - Создавайте маршруты для активного отдыха</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrekPlan - Создавайте маршруты для активного отдыха</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-</head>
+  <body>
+    <div id="app">
+      <!-- Шапка сайта -->
+      <header>
+        <div class="container">
+          <div class="header-content">
+            <a href="#" class="logo">
+              <i class="fas fa-route" style="margin-right: 40%"></i>
+              <b>TrekPlan</b>
+            </a>
 
-<body>
-  <div id="app">
-    <!-- Шапка сайта -->
-    <header>
-      <div class="container">
-        <div class="header-content">
-          <a href="#" class="logo">
-            <i class="fas fa-route" style="margin-right: 40%"></i>
-            <b>TrekPlan</b>
-          </a>
-
-          <button class="mobile-menu-btn" @click="toggleMobileMenu">
-            <i class="fas fa-bars"></i>
-          </button>
-
-          <ul class="nav-menu">
-            <div class="nav-li">
-              <li><a href="#about">О приложении</a></li>
-              <li><a href="#features" style="margin-left: 3em">Возможности</a></li>
-            </div>
-
-            <button class="btn-login" style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%">
-              <a v-if="!isLoggedIn" href="./autorization">Войти</a>
-              <a v-else href="./trek">Маршруты</a>
+            <button class="mobile-menu-btn" @click="toggleMobileMenu">
+              <i class="fas fa-bars"></i>
             </button>
-          </ul>
-        </div>
-      </div>
-    </header>
 
-    <!-- Герой блок -->
-    <section class="hero">
-      <div class="container">
-        <div class="hero-content">
-          <h1>Планируй поход просто и удобно</h1>
-          <p>Создай маршрут, собери команду, будь готов</p>
-          <button class="btn-primary" @click="createRoute">
-            <i class="fas fa-plus-circle"></i>
-            <a href="./registration">Создать маршрут</a>
-          </button>
-        </div>
-      </div>
-    </section>
+            <ul class="nav-menu">
+              <div class="nav-li">
+                <li><a href="#about">О приложении</a></li>
+                <li>
+                  <a href="#features" style="margin-left: 3em">Возможности</a>
+                </li>
+              </div>
 
-    <!-- О приложении блок -->
-    <section class="about-app" id="about">
-      <div class="container">
-        <div class="about-content">
-          <div class="about-text">
-            <h2>
-              TrekPlan — ваш умный помощник в мире походов и приключений
-            </h2>
-            <h3>От мечты до маршрута — одним касанием</h3>
-            <p>
-              Мечтаете о походах, но пугает сложность подготовки? Хотите
-              собрать команду единомышленников, но не знаете, с чего начать?
-              TrekPlan превращает планирование приключений из головной боли в
-              увлекательный процесс, доступный каждому — от первого выхода в
-              лес до сложных экспедиций в горы.
-            </p>
-          </div>
-          <div class="about-image">
-            <img src="img/img_left.jpg" alt="TrikPlan в действии" />
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Возможности блок -->
-    <section class="features" id="features">
-      <div class="container">
-        <h2 class="section-title">Возможности TrikPlan</h2>
-        <div class="features-grid">
-          <div class="feature-item">
-            <div class="feature-icon">
-              <i class="fas fa-map-marked-alt"></i>
-            </div>
-            <img src="icon/route.png" />
-            <h3>Интеллектуальный планировщик маршрутов</h3>
-            <p>
-              Система анализирует сложность, наличие воды и мест для ночёвок,
-              подбирает готовые шаблоны или строит уникальный путь. Просто
-              задайте параметры — получите детальный план с расчётом времени,
-              высотными профилями и альтернативными вариантами.
-            </p>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">
-              <i class="fas fa-mountain"></i>
-            </div>
-            <img src="icon/backpack.png" />
-            <h3>Умная система управления снаряжением</h3>
-            <p>
-              Система создаёт персонализированные списки снаряжения,
-              адаптируясь под сезон, погоду, тип похода и состав группы.
-              Контролирует вес рюкзака, напоминает о проверке оборудования и
-              помогает ничего не забыть.
-            </p>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">
-              <i class="fas fa-share-alt"></i>
-            </div>
-            <img src="icon/dollar.png" alt="" />
-            <h3>Финансовые инструменты для прозрачных расчётов</h3>
-            <p>
-              Автоматический расчёт бюджета, система сборов с интеграцией
-              банков, прозрачные отчёты для участников. Организаторы получают
-              шаблоны документов и инструменты для управления бюджетами любой
-              сложности.
-            </p>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">
-              <i class="fas fa-cloud-sun"></i>
-            </div>
-            <img src="icon/chat.png" alt="" />
-            <h3>Платформа для создания и управления группами</h3>
-            <p>
-              Поиск попутчиков по уровню подготовки и интересам, инструменты
-              для организаторов по набору участников, распределению
-              обязанностей и коммуникации. Всё для создания слаженной группы
-              без лишних хлопот.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Футер -->
-    <footer>
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-about">
-            <div class="footer-logo">TrekPlan</div>
-            <p>
-              Приложение для планирования маршрутов активного отдыха.
-              Открывайте новые места и создавайте незабываемые приключения с
-              TrekPlan.
-            </p>
-          </div>
-
-          <div class="footer-links">
-            <h3>Навигация</h3>
-            <ul>
-              <li><a href="./index">Главная</a></li>
-              <li><a href="#about">О приложении</a></li>
-              <li><a href="#features">Возможности</a></li>
+              <button
+                class="btn-login"
+                style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%"
+              >
+                <a v-if="!isLoggedIn" href="./autorization">Войти</a>
+                <a v-else href="./trek">Маршруты</a>
+              </button>
             </ul>
           </div>
+        </div>
+      </header>
 
-          <div class="footer-contact">
-            <h3>Контакты</h3>
-            <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
-            <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
-            <p>
-              <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
-              15
-            </p>
-            <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+      <!-- Герой блок -->
+      <section class="hero">
+        <div class="container">
+          <div class="hero-content">
+            <h1>Планируй поход просто и удобно</h1>
+            <p>Создай маршрут, собери команду, будь готов</p>
+            <button class="btn-primary" @click="createRoute">
+              <i class="fas fa-plus-circle"></i>
+              <a href="./registration">Создать маршрут</a>
+            </button>
           </div>
         </div>
-      </div>
-    </footer>
-  </div>
+      </section>
 
-  <script>
-    const { createApp } = Vue;
+      <!-- О приложении блок -->
+      <section class="about-app" id="about">
+        <div class="container">
+          <div class="about-content">
+            <div class="about-text">
+              <h2>
+                TrekPlan — ваш умный помощник в мире походов и приключений
+              </h2>
+              <h3>От мечты до маршрута — одним касанием</h3>
+              <p>
+                Мечтаете о походах, но пугает сложность подготовки? Хотите
+                собрать команду единомышленников, но не знаете, с чего начать?
+                TrekPlan превращает планирование приключений из головной боли в
+                увлекательный процесс, доступный каждому — от первого выхода в
+                лес до сложных экспедиций в горы.
+              </p>
+            </div>
+            <div class="about-image">
+              <img src="img/img_left.jpg" alt="TrikPlan в действии" />
+            </div>
+          </div>
+        </div>
+      </section>
 
-    createApp({
-      data() {
-        return {
-          mobileMenuActive: false,
-          isLoggedIn: false // Состояние авторизации
-        };
-      },
-      mounted() {
-        this.checkAuth();
-      },
-      methods: {
-        async checkAuth() {
-          try {
-            const response = await fetch('/api/auth-status');
-            const data = await response.json();
-            this.isLoggedIn = data.isAuthenticated;
-          } catch (error) {
-            console.error("Ошибка проверки авторизации:", error);
-            this.isLoggedIn = false;
-          }
-        },
-        createRoute() {
-          // Если авторизован - перенаправляем, если нет - показываем alert
-          if (this.isLoggedIn) {
-            window.location.href = "/trek";
-          } else {
-            alert("Функция создания маршрута будет доступна после регистрации!");
-          }
-        },
-        toggleMobileMenu() {
-          this.mobileMenuActive = !this.mobileMenuActive;
-        },
-      },
-    }).mount("#app");
-  </script>
-</body>
+      <!-- Возможности блок -->
+      <section class="features" id="features">
+        <div class="container">
+          <h2 class="section-title">Возможности TrikPlan</h2>
+          <div class="features-grid">
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fas fa-map-marked-alt"></i>
+              </div>
+              <img src="icon/route.png" />
+              <h3>Интеллектуальный планировщик маршрутов</h3>
+              <p>
+                Система анализирует сложность, наличие воды и мест для ночёвок,
+                подбирает готовые шаблоны или строит уникальный путь. Просто
+                задайте параметры — получите детальный план с расчётом времени,
+                высотными профилями и альтернативными вариантами.
+              </p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fas fa-mountain"></i>
+              </div>
+              <img src="icon/backpack.png" />
+              <h3>Умная система управления снаряжением</h3>
+              <p>
+                Система создаёт персонализированные списки снаряжения,
+                адаптируясь под сезон, погоду, тип похода и состав группы.
+                Контролирует вес рюкзака, напоминает о проверке оборудования и
+                помогает ничего не забыть.
+              </p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fas fa-share-alt"></i>
+              </div>
+              <img src="icon/dollar.png" alt="" />
+              <h3>Финансовые инструменты для прозрачных расчётов</h3>
+              <p>
+                Автоматический расчёт бюджета, система сборов с интеграцией
+                банков, прозрачные отчёты для участников. Организаторы получают
+                шаблоны документов и инструменты для управления бюджетами любой
+                сложности.
+              </p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fas fa-cloud-sun"></i>
+              </div>
+              <img src="icon/chat.png" alt="" />
+              <h3>Платформа для создания и управления группами</h3>
+              <p>
+                Поиск попутчиков по уровню подготовки и интересам, инструменты
+                для организаторов по набору участников, распределению
+                обязанностей и коммуникации. Всё для создания слаженной группы
+                без лишних хлопот.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <!-- Футер -->
+      <footer>
+        <div class="container">
+          <div class="footer-content">
+            <div class="footer-about">
+              <div class="footer-logo">TrekPlan</div>
+              <p>
+                Приложение для планирования маршрутов активного отдыха.
+                Открывайте новые места и создавайте незабываемые приключения с
+                TrekPlan.
+              </p>
+            </div>
+
+            <div class="footer-links">
+              <h3>Навигация</h3>
+              <ul>
+                <li><a href="./index">Главная</a></li>
+                <li><a href="#about">О приложении</a></li>
+                <li><a href="#features">Возможности</a></li>
+              </ul>
+            </div>
+
+            <div class="footer-contact">
+              <h3>Контакты</h3>
+              <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
+              <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
+              <p>
+                <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
+                15
+              </p>
+              <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      createApp({
+        data() {
+          return {
+            mobileMenuActive: false,
+            isLoggedIn: false, // Состояние авторизации
+          };
+        },
+        mounted() {
+          this.checkAuth();
+        },
+        methods: {
+          async checkAuth() {
+            try {
+              const response = await fetch("/api/auth-status");
+              const data = await response.json();
+              this.isLoggedIn = data.isAuthenticated;
+            } catch (error) {
+              console.error("Ошибка проверки авторизации:", error);
+              this.isLoggedIn = false;
+            }
+          },
+          createRoute() {
+            // Если авторизован - перенаправляем, если нет - показываем alert
+            if (this.isLoggedIn) {
+              window.location.href = "/trek";
+            } else {
+              alert(
+                "Функция создания маршрута будет доступна после регистрации!",
+              );
+            }
+          },
+          toggleMobileMenu() {
+            this.mobileMenuActive = !this.mobileMenuActive;
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
 </html>
