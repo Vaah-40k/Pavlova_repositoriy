@@ -1139,3 +1139,26 @@ select.form-input {
 .record-item select {
   min-width: 200px;
 }
+
+.social-btn {
+  display: inline-block;
+  margin-right: 10px;
+  border-radius: 5px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  transition: opacity 0.3s;
+}
+.route-actions {
+  display: flex;
+  justify-content: space-around;
+}
+.social-btn:hover {
+  opacity: 0.8;
+}
+
+.no-link {
+  color: #999;
+  font-size: 0.9em;
+  margin-right: 10px;
+}

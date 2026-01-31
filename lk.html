@@ -131,7 +131,7 @@
           </section>
 
           <section v-else-if="activeMenu === 'Группы'">
-            <h2 class="routesh2">Группы</h2>
+            <h2 class="routesh2">Мои группы</h2>
             <div class="groups">
               <div
                 v-if="userGroups.length === 0"
@@ -143,12 +143,65 @@
                   class="empty-groups-img"
                 />
                 <p class="empty-groups-text">
-                  Вы не состоите ни в одной из групп, чтобы добавиться в группу,
-                  нужно принять участие в готовом маршруте
+                  Вы не состоите ни в одной из групп. Чтобы добавиться в группу,
+                  нужно принять участие в готовом маршруте.
                 </p>
               </div>
 
-              <div v-else></div>
+              <div v-else class="routes">
+                <div
+                  class="route-card"
+                  v-for="group in userGroups"
+                  :key="group.id"
+                >
+                  <p class="title">{{ group.route_name }}</p>
+                  <p style="font-size: 0.9em; color: #666; margin-bottom: 10px">
+                    Гид: {{ group.guide_name }}
+                  </p>
+
+                  <div
+                    class="map-placeholder"
+                    :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + group.route_img_id + ')', backgroundSize: 'cover' }"
+                  ></div>
+
+                  <div class="route-actions" style="margin-top: 15px">
+                    <div>
+                      <a
+                        v-if="group.vk_link"
+                        :href="group.vk_link"
+                        target="_blank"
+                        class="social-btn vk"
+                        src="icon/vk.png"
+                      >
+                        <i class="fab fa-vk"></i>
+                        <img
+                          src="icon/vk.png"
+                          alt=""
+                          style="width: 100%; height: 100%"
+                        />
+                      </a>
+                      <span v-else class="no-link">Нет VK</span>
+                    </div>
+                    <div>
+                      <a
+                        v-if="group.tg_link"
+                        :href="group.tg_link"
+                        target="_blank"
+                        class="social-btn tg"
+                      >
+                        <i class="fab fa-telegram-plane"></i>
+
+                        <img
+                          src="icon/telegram.png"
+                          alt=""
+                          style="width: 100%; height: 100%"
+                        />
+                      </a>
+                      <span v-else class="no-link">Нет TG</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -682,6 +735,14 @@
             }
             this.activeMenu = item;
           },
+          loadUserGroups() {
+            fetch("/api/user-groups")
+              .then((res) => res.json())
+              .then((data) => {
+                this.userGroups = data;
+              })
+              .catch((err) => console.error("Ошибка загрузки групп", err));
+          },
         },
         watch: {
           activeMenu(newVal) {
@@ -771,6 +832,7 @@
               console.error("Ошибка загрузки маршрутов", err);
               this.routes = [];
             });
+          this.loadUserGroups();
         },
       }).mount("#app");
     </script>
