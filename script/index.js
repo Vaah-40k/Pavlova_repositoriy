@@ -1060,6 +1060,53 @@ app.post("/generate-route", async (req, res) => {
   }
 });
 
+app.get("/api/user-groups", async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json([]);
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const userId = decoded.id;
+    const role = decoded.role;
+
+    // Группы показываем только участникам
+    if (role !== "participant") {
+      return res.json([]);
+    }
+
+    const groups = [];
+
+    // 1. Ищем все записи пользователя на маршруты
+    const records = await Record.findAll({ where: { Tourist_ID: userId } });
+
+    for (const record of records) {
+      // 2. Ищем сам маршрут
+      const route = await Route.findByPk(record.Route_ID);
+
+      if (route && route.Guide_ID) {
+        // 3. Ищем гида, который ведет этот маршрут
+        const guide = await Guide.findByPk(route.Guide_ID);
+
+        if (guide) {
+          groups.push({
+            id: record.Trip_ID, // ID заявки
+            route_name: route.Route_Name,
+            route_img_id: route.Route_ID, // Для генерации картинки
+            guide_name: `${guide.First_Name} ${guide.Last_Name}`,
+            vk_link: guide.vk_link || "",
+            tg_link: guide.tg_link || "",
+          });
+        }
+      }
+    }
+
+    res.json(groups);
+  } catch (err) {
+    console.error("Ошибка при получении групп:", err);
+    res.status(500).json([]);
+  }
+});
+
 function startServer() {
   Working_Site();
 
