@@ -191,21 +191,19 @@ const Working_Site = () => {
         if (!route) return res.status(404).json({ error: "Маршрут не найден" });
 
         routeData.name = route.Route_Name;
-        // !!! ВОТ ЗДЕСЬ БЫЛА ОШИБКА. Добавляем возврат описания:
         routeData.description = route.Route_Description;
-
         routeData.days = route.Route_Days || 1;
         routeData.distance = route.Route_Length
           ? (route.Route_Length / 1000).toFixed(2)
           : "0";
 
-        // !!! И ВОТ ЗДЕСЬ БЫЛА ОШИБКА. Собираем фото из колонок Photo1...Photo4
+        // !!! Сбор фоток. Фильтр убирает пустые значения (null или пустые строки)
         routeData.photos = [
           route.Photo1,
           route.Photo2,
           route.Photo3,
           route.Photo4,
-        ].filter(Boolean); // Убираем null, если фоток меньше 4
+        ].filter((p) => p && p.trim() !== "");
 
         try {
           routeData.gear = route.equipment ? JSON.parse(route.equipment) : [];
@@ -548,6 +546,164 @@ app.delete("/api/admin/delete-site-route", async (req, res) => {
   }
 });
 
+// ПРОСМОТР ДАННЫХ ГИДА АДМИНИСТРАТОРОМ
+app.get("/api/admin/route-docs/:routeId", async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ error: "Не авторизован" });
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    if (decoded.role !== "admin")
+      return res.status(403).json({ error: "Доступ запрещен" });
+
+    const { routeId } = req.params;
+    const customRoute = await Custum_Route.findByPk(routeId);
+    if (!customRoute)
+      return res.status(404).json({ error: "Маршрут не найден" });
+
+    const guide = await Guide.findByPk(customRoute.Guide_ID);
+    if (!guide) return res.status(404).json({ error: "Гид не найден" });
+
+    const guideData = {
+      login: guide.login,
+      First_Name: guide.First_Name,
+      Last_Name: guide.Last_Name,
+      phone: guide.phone,
+      email: guide.email,
+      tg_link: guide.tg_link,
+      vk_link: guide.vk_link,
+      Age: guide.Age,
+      role: guide.role,
+      experience: guide.experience,
+      Guide_License: guide.Guide_License
+        ? `http://localhost:${process.env.PORT}${guide.Guide_License}`
+        : null,
+      cost_org: customRoute.Cost_organization || 0, // Взнос из маршрута
+    };
+
+    const photos = [
+      customRoute.Photo1,
+      customRoute.Photo2,
+      customRoute.Photo3,
+      customRoute.Photo4,
+    ].filter((p) => p);
+
+    res.json({ guideData, photos });
+  } catch (err) {
+    console.error("Ошибка в /api/admin/route-docs:", err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ОПУБЛИКОВАТЬ МАРШРУТ АДМИНОМ (ФИНАЛЬНАЯ ВЕРСИЯ С ПЕРЕНОСОМ ВСЕХ ПОЛЕЙ)
+app.post("/api/admin/publish-route", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ message: "Нет авторизации" });
+
+    const decoded = jwt.verify(token, SECRET_KEY);
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ message: "Доступ запрещен" });
+    }
+
+    const { customRouteId } = req.body;
+    if (!customRouteId)
+      return res.status(400).json({ message: "ID маршрута не передан" });
+
+    // 1. Получаем исходный кастомный маршрут
+    const sourceRoute = await Custum_Route.findByPk(customRouteId);
+
+    if (!sourceRoute) {
+      return res.status(404).json({ message: "Маршрут не найден" });
+    }
+
+    // 2. Создаем запись в основной таблице routes
+    // ВАЖНО: Здесь мы маппим поля из custom_routse в routes
+    const newRoute = await Route.create({
+      Route_Name: sourceRoute.Route_Name,
+      Route_Description: sourceRoute.Route_Description,
+      Route_Length: sourceRoute.Route_Length,
+      Route_Duration: sourceRoute.Route_Duration,
+      Route_Type: "Standard", // Маршрут становится официальным
+      Terrain_Type: sourceRoute.Terrain_Type || "Mixed",
+      Guide_ID: sourceRoute.Guide_ID,
+      Cost_organization: sourceRoute.Cost_organization,
+
+      // --- ПЕРЕНОС НЕДОСТАЮЩИХ ДАННЫХ ---
+
+      // Перенос настроек карты
+      Map_Zoom: sourceRoute.Map_Zoom,
+      Map_Center: sourceRoute.Map_Center,
+
+      // Перенос количества дней
+      Route_Days: sourceRoute.Route_Days,
+
+      // Перенос снаряжения:
+      // Записываем JSON из equipment (custom) в Required_Equipment (routes) как просили
+      Required_Equipment: sourceRoute.equipment,
+      // На всякий случай дублируем в equipment, если логика фронта использует это поле
+
+      // Перенос фотографий
+      Photo1: sourceRoute.Photo1,
+      Photo2: sourceRoute.Photo2,
+      Photo3: sourceRoute.Photo3,
+      Photo4: sourceRoute.Photo4,
+    });
+
+    const newRouteId = newRoute.Route_ID;
+
+    // 3. Перенос точек из колонок WaiPoint1...20 в таблицу route_point
+
+    // Попытаемся распарсить имена точек, если они сохранены в JSON
+    let pointNames = [];
+    try {
+      if (sourceRoute.point_names) {
+        pointNames = JSON.parse(sourceRoute.point_names);
+      }
+    } catch (e) {
+      console.error("Ошибка парсинга имен точек:", e);
+    }
+
+    // Массив для bulkCreate
+    const pointsToInsert = [];
+
+    for (let i = 1; i <= 20; i++) {
+      // Берем значение из колонки WaiPoint1, WaiPoint2 и т.д.
+      const coordKey = `WaiPoint${i}`;
+      const coordinates = sourceRoute[coordKey];
+
+      // Если координаты есть и они не пустые
+      if (coordinates && coordinates.trim() !== "") {
+        pointsToInsert.push({
+          Route_ID: newRouteId,
+          Point_Name: pointNames[i - 1] || `Точка ${i}`, // Берем имя из массива или генерируем
+          Description: "",
+          Sequence_Number: i, // Порядковый номер
+          Coordinates: coordinates,
+        });
+      }
+    }
+
+    // Записываем все точки разом в таблицу route_point
+    if (pointsToInsert.length > 0) {
+      await Route_Point.bulkCreate(pointsToInsert);
+    }
+
+    // 4. Обновляем статус исходного маршрута
+    sourceRoute.status = "published";
+    await sourceRoute.save();
+
+    res.json({
+      message: "Маршрут успешно опубликован и конвертирован!",
+      newId: newRouteId,
+    });
+  } catch (error) {
+    console.error("Ошибка публикации:", error);
+    res
+      .status(500)
+      .json({ message: "Ошибка сервера при публикации", error: error.message });
+  }
+});
 // ПУБЛИКАЦИЯ ГИДОМ МАРШРУТА
 app.post("/api/custom-routes/publish/:id", async (req, res) => {
   try {
@@ -976,7 +1132,7 @@ app.delete("/api/delete-route", async (req, res) => {
   }
 });
 
-// ПРОКЛАДКА МАРШРУТОВ (ВЕЛОСИПЕД)
+// ПРОКЛАДКА МАРШРУТОВ
 app.post("/generate-route", async (req, res) => {
   const { coordinates } = req.body;
 

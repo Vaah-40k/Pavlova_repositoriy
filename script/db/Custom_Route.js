@@ -48,11 +48,13 @@ module.exports = function (sequelize) {
       equipment: {
         type: DataTypes.STRING,
       },
-      costs: {
-        type: DataTypes.STRING,
-      },
+
       Cost_organization: {
         type: DataTypes.INTEGER,
+      },
+      rejection_reason: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       Photo1: {
         type: DataTypes.STRING,

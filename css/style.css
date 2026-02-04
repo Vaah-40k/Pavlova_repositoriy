@@ -1152,6 +1152,7 @@ select.form-input {
 .route-actions {
   display: flex;
   justify-content: space-around;
+  flex-direction: column;
 }
 .social-btn:hover {
   opacity: 0.8;
@@ -1161,4 +1162,125 @@ select.form-input {
   color: #999;
   font-size: 0.9em;
   margin-right: 10px;
+}
+
+.full-screen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ff0101;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body-split {
+  display: flex;
+  flex: 1;
+  overflow: hidden; /* Чтобы скроллились только панели внутри */
+}
+
+.guide-form-panel,
+.photos-panel {
+  padding: 40px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.guide-form-panel {
+  width: 45%;
+  border-right: 1px solid #eee;
+  background: #fcfcfc;
+}
+
+.photos-panel {
+  width: 55%;
+}
+
+.admin-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.admin-photo-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.highlight-box {
+  background: #e8f5e9;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.cost-input {
+  font-weight: bold;
+  color: #2e7d32;
+  font-size: 1.2em !important;
+}
+
+.reject-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+.reject-modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.reject-textarea {
+  width: 100%;
+  height: 100px;
+  margin: 10px 0;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+.btn-reject-confirm {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-rejected-status {
+  background-color: #dc3545 !important; /* Красный */
+  color: white !important;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  display: block;
+  text-align: center;
+}
+.warning-text {
+  margin-top: 15px;
+  padding: 10px;
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px solid #ffeeba;
 }

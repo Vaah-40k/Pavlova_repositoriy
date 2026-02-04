@@ -104,11 +104,6 @@
                 style="display: block; margin-bottom: 10px; font-weight: bold"
                 >Фотографии маршрута (4 шт.)</label
               >
-
-              <label
-                style="display: block; margin-bottom: 10px; font-weight: bold"
-                >Фотографии маршрута (4 шт.)</label
-              >
               <div
                 class="photo-grid"
                 style="
@@ -1312,12 +1307,23 @@
                 const img = slots[i].querySelector(".photo-preview");
                 const icon = slots[i].querySelector("i");
 
-                img.src = window.location.origin + path;
+                // ВАЖНО: Проверяем, начинается ли путь со слэша.
+                // Если нет — добавляем, иначе ссылка будет битой (http://siteuploads/...)
+                const safePath = path.startsWith("/") ? path : "/" + path;
+
+                img.src = window.location.origin + safePath;
                 img.style.display = "block";
                 icon.style.display = "none";
 
-                //  КЛЮЧЕВОЕ — помечаем, что тут серверное фото
+                // Помечаем, что это файл с сервера, чтобы валидация при сохранении не ругалась
                 photoFiles[i] = "SERVER_FILE";
+              });
+            } else {
+              // Если фоток нет, можно сбросить превью (на случай, если открываем разные маршруты подряд)
+              const slots = document.querySelectorAll(".photo-slot");
+              slots.forEach((slot) => {
+                slot.querySelector(".photo-preview").style.display = "none";
+                slot.querySelector("i").style.display = "block";
               });
             }
             // 2. Точки

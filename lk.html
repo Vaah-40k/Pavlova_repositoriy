@@ -387,27 +387,99 @@
 
           <section v-else-if="activeMenu === 'Предложенные маршруты'">
             <h2 class="routesh2">Маршруты на модерации</h2>
-            <div
-              v-if="allSystemRoutes.proposed.length === 0"
-              style="padding: 20px; text-align: center; color: gray"
-            >
-              Нет маршрутов, ожидающих публикации.
-            </div>
-            <div class="admin-routes-grid">
+
+            <div class="routes">
+              <div
+                v-if="allSystemRoutes.proposed.length === 0"
+                style="padding: 20px; color: #666; width: 100%"
+              >
+                Нет маршрутов, ожидающих публикации.
+              </div>
+
               <div
                 v-for="route in allSystemRoutes.proposed"
                 :key="route.Route_custom_ID"
                 class="route-card"
               >
-                <div class="card-content" style="padding: 15px">
-                  <h3>{{ route.Route_Name }}</h3>
-                  <p>Автор ID: {{ route.Tourist_ID }}</p>
-                  <p>Длина: {{ (route.Route_Length / 1000).toFixed(2) }} км</p>
-                  <button
-                    class="open-btn"
-                    @click="openRouteDetails(route.Route_custom_ID, 'custom')"
+                <p>
+                  <strong>ID Гида: {{ route.Guide_ID }}</strong>
+                </p>
+
+                <p class="title">{{ route.Route_Name }}</p>
+
+                <div
+                  class="map-placeholder"
+                  :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + route.Route_custom_ID + ')', backgroundSize: 'cover' }"
+                ></div>
+
+                <div class="info">
+                  <span
+                    >Время: {{ route.Route_Duration || route.Route_Days + ' дн.'
+                    }}</span
                   >
-                    Открыть для проверки
+                  <span
+                    >Длина: {{ (route.Route_Length / 1000).toFixed(2) }}
+                    км</span
+                  >
+                </div>
+
+                <div
+                  class="route-actions"
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    margin-top: 15px;
+                  "
+                >
+                  <div style="display: flex; gap: 10px; width: 100%">
+                    <button
+                      class="open-btn"
+                      style="
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 5px;
+                      "
+                      @click="openRouteDetails(route.Route_custom_ID, 'custom')"
+                    >
+                      <i class="fas fa-eye"></i> Открыть
+                    </button>
+
+                    <button
+                      class="btn-docs"
+                      @click="openDocs(route.Route_custom_ID || route.id)"
+                      style="
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 5px;
+                        background-color: orange;
+                        border: 0px solid red;
+                        border-radius: 8px;
+                      "
+                    >
+                      Документы
+                    </button>
+                  </div>
+
+                  <button
+                    class="publish-btn"
+                    style="
+                      width: 100%;
+                      background-color: #28a745;
+                      color: white;
+                      border: none;
+                      padding: 10px;
+                      border-radius: 5px;
+                      cursor: pointer;
+                      font-weight: bold;
+                    "
+                    @click="publishRoute(route)"
+                  >
+                    <i class="fas fa-check"></i> Опубликовать
                   </button>
                 </div>
               </div>
@@ -422,6 +494,125 @@
             </div>
           </section>
         </main>
+      </div>
+
+      <div v-if="showDocModal" class="full-screen-modal">
+        <div class="modal-header">
+          <h2>Карточка организатора и документы</h2>
+          <button @click="closeDocs" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body-split">
+          <div class="guide-form-panel">
+            <h3>Личные данные гида</h3>
+            <div class="admin-form-readonly">
+              <div class="form-row">
+                <label>Логин:</label>
+                <input type="text" :value="docData.guideData.login" readonly />
+              </div>
+              <div class="form-row">
+                <label>Имя:</label>
+                <input
+                  type="text"
+                  :value="docData.guideData.First_Name"
+                  readonly
+                />
+              </div>
+              <div class="form-row">
+                <label>Фамилия:</label>
+                <input
+                  type="text"
+                  :value="docData.guideData.Last_Name"
+                  readonly
+                />
+              </div>
+              <div class="form-row">
+                <label>Телефон:</label>
+                <input type="text" :value="docData.guideData.phone" readonly />
+              </div>
+              <div class="form-row">
+                <label>Email:</label>
+                <input type="text" :value="docData.guideData.email" readonly />
+              </div>
+              <div class="form-row">
+                <label>Возраст:</label>
+                <input type="text" :value="docData.guideData.Age" readonly />
+              </div>
+              <div class="form-row">
+                <label>Роль:</label>
+                <input type="text" :value="docData.guideData.role" readonly />
+              </div>
+              <div class="form-row">
+                <label>Опыт:</label>
+                <input
+                  type="text"
+                  :value="docData.guideData.experience"
+                  readonly
+                />
+              </div>
+              <div class="form-row">
+                <label>Ссылка на TG:</label>
+                <a
+                  v-if="docData.guideData.tg_link"
+                  :href="docData.guideData.tg_link"
+                  target="_blank"
+                >
+                  {{ docData.guideData.tg_link }}
+                </a>
+                <input v-else type="text" value="Нет" readonly />
+              </div>
+              <div class="form-row">
+                <label>Ссылка на VK:</label>
+                <a
+                  v-if="docData.guideData.vk_link"
+                  :href="docData.guideData.vk_link"
+                  target="_blank"
+                >
+                  {{ docData.guideData.vk_link }}
+                </a>
+                <input v-else type="text" value="Нет" readonly />
+              </div>
+              <div class="form-row">
+                <label>Лицензия:</label>
+                <a
+                  v-if="docData.guideData.Guide_License"
+                  :href="docData.guideData.Guide_License"
+                  target="_blank"
+                >
+                  Просмотреть лицензию
+                </a>
+                <input v-else type="text" value="Нет" readonly />
+              </div>
+              <div class="form-row highlight-box">
+                <label>Организационный взнос:</label>
+                <input
+                  type="text"
+                  :value="docData.guideData.cost_org + ' ₽'"
+                  class="cost-input"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="photos-panel">
+            <h3>Прикрепленные фотографии</h3>
+            <div class="admin-photo-grid">
+              <div
+                v-for="(photo, index) in docData.photos"
+                :key="index"
+                class="admin-photo-card"
+              >
+                <img
+                  :src="photo.startsWith('/') ? photo : '/' + photo"
+                  alt="Фото маршрута"
+                />
+              </div>
+              <div v-if="docData.photos.length === 0" class="no-photos">
+                Гид не прикрепил фотографии к этому маршруту
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -455,6 +646,11 @@
               experience: "",
               link_vk_group: "",
               link_tg_group: "",
+            },
+            showDocModal: false,
+            docData: {
+              guideData: {},
+              photos: [],
             },
           };
         },
@@ -649,53 +845,100 @@
               console.error("Ошибка загрузки админки", err);
             }
           },
-          publishRoute(route) {
-            // --- ВАЛИДАЦИЯ ПРОФИЛЯ ---
-            const p = this.profileForm;
+          async publishRoute(route) {
+            if (this.user.role !== "admin") {
+              // Если это гид, выполняем старую логику (если она была) или ничего
 
-            // Проверка общих полей для всех
-            let isProfileFilled =
-              p.First_Name &&
-              p.Last_Name &&
-              p.phone &&
-              p.email &&
-              p.age &&
-              p.experience;
+              await this.loadUserProfile();
 
-            // Дополнительная проверка для организатора
-            if (this.user.role === "organizer") {
-              // Проверяем наличие лицензии (строка пути к файлу) и ссылок
-              if (!p.Guide_License || !p.link_vk_group || !p.link_tg_group) {
-                isProfileFilled = false;
+              // --- ВАЛИДАЦИЯ ПРОФИЛЯ ---
+              const p = this.profileForm;
+
+              // Проверка общих полей для всех
+              let isProfileFilled =
+                p.First_Name &&
+                p.Last_Name &&
+                p.phone &&
+                p.email &&
+                p.age &&
+                p.experience;
+
+              // Дополнительная проверка для организатора
+              if (this.user.role === "organizer") {
+                // Проверяем наличие лицензии (строка пути к файлу) и ссылок
+                if (!p.Guide_License || !p.link_vk_group || !p.link_tg_group) {
+                  isProfileFilled = false;
+                }
               }
-            }
 
-            if (!isProfileFilled) {
-              alert("Данные формы не заполнены");
-              // Переключаем на вкладку "Мои данные", чтобы пользователь увидел, что не так
-              this.activeMenu = "Мои данные";
+              if (!isProfileFilled) {
+                alert("Данные формы не заполнены");
+                // Переключаем на вкладку "Мои данные", чтобы пользователь увидел, что не так
+                this.activeMenu = "Мои данные";
+                return;
+              }
+
+              if (!confirm("Отправить маршрут на публикацию?")) return;
+
+              const id = route.bookingId.toString().replace("custom_", "");
+
+              fetch(`/api/custom-routes/publish/${id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+              })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.success) {
+                    route.status = "pending";
+                    alert("Маршрут отправлен на модерацию");
+                  } else {
+                    alert("Ошибка: " + (data.error || "неизвестно"));
+                  }
+                })
+                .catch((err) => console.error("Ошибка запроса:", err));
+
               return;
             }
 
-            if (!confirm("Отправить маршрут на публикацию?")) return;
+            const isConfirmed = confirm(
+              "Вы точно хотите опубликовать этот маршрут на сайт?",
+            );
 
-            const id = route.bookingId.toString().replace("custom_", "");
+            if (isConfirmed) {
+              const routeId = route.Route_custom_ID; // Добавлено: определение routeId из route
 
-            fetch(`/api/custom-routes/publish/${id}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.success) {
-                  route.status = "pending";
-                  alert("Маршрут отправлен на модерацию");
+              try {
+                // Отправляем запрос на наш новый бэкенд
+                const response = await fetch("/api/admin/publish-route", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ customRouteId: routeId }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                  alert("Маршрут опубликован!");
+                  // Обновляем список, если нужно
+                  this.loadAllSystemRoutes(); // Исправлено: вместо fetchRoutes()
                 } else {
-                  alert("Ошибка: " + (data.error || "неизвестно"));
+                  alert("Ошибка: " + result.message);
                 }
-              })
-              .catch((err) => console.error("Ошибка запроса:", err));
+              } catch (error) {
+                console.error(error);
+                alert("Произошла ошибка сети");
+              }
+            } else {
+              // Пользователь нажал "Нет"
+              console.log("Публикация отменена");
+            }
+
+            // ИСПРАВЛЕНИЕ: Сделали async
+            // --- ИСПРАВЛЕНИЕ: Загружаем свежие данные профиля перед проверкой ---
           },
+
           confirmLogout() {
             if (confirm("Вы точно хотите выйти из аккаунта?")) {
               // удаляем куки
@@ -743,21 +986,50 @@
               })
               .catch((err) => console.error("Ошибка загрузки групп", err));
           },
-        },
-        watch: {
-          activeMenu(newVal) {
-            if (newVal === "Выйти из аккаунта") {
-              this.confirmLogout();
-              return;
-            }
-
-            if (newVal === "Мои данные") {
-              this.loadUserProfile();
-            }
-            if (newVal === "Все маршруты") {
-              this.loadAllSystemRoutes();
+          async viewGuideDocs(guideId) {
+            if (!guideId) return alert("ID гида не найден");
+            try {
+              // Запрашиваем инфо о гиде, чтобы получить ссылку на лицензию
+              const res = await fetch(
+                `/api/admin/get-guide-license?id=${guideId}`,
+              );
+              const data = await res.json();
+              if (data.licenseUrl) {
+                // Открываем лицензию в новой вкладке
+                window.open(data.licenseUrl, "_blank");
+              } else {
+                alert("У этого гида нет загруженных документов или лицензии.");
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Ошибка при поиске документов.");
             }
           },
+
+          async adminApproveRoute(routeId) {
+            if (!confirm("Вы уверены, что хотите опубликовать этот маршрут?"))
+              return;
+
+            try {
+              const res = await fetch("/api/admin/approve-route", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: routeId }),
+              });
+              const data = await res.json();
+              if (data.status === "ok") {
+                alert("Маршрут опубликован!");
+                // Обновляем список локально
+                this.loadAllSystemRoutes();
+              } else {
+                alert("Ошибка: " + data.error);
+              }
+            } catch (err) {
+              console.error(err);
+              alert("Ошибка сети");
+            }
+          },
+          // ИСПРАВЛЕНИЕ: Переместили из watch в methods
           deleteSiteRoute(id) {
             if (!confirm("Вы уверены, что хотите убрать этот маршрут с сайта?"))
               return;
@@ -779,8 +1051,51 @@
                 }
               });
           },
+          // ИСПРАВЛЕНИЕ: Переместили из watch в methods
           openRouteDetails(id, type) {
             window.location.href = `/scheduler?id=${id}&type=${type}`;
+          },
+          openDocs(routeId) {
+            console.log("Загрузка документов для маршрута:", routeId);
+            fetch(`/api/admin/route-docs/${routeId}`)
+              .then((res) => {
+                if (!res.ok) throw new Error("Ошибка сервера: " + res.status);
+                return res.json();
+              })
+              .then((data) => {
+                this.docData = data;
+                this.showDocModal = true;
+                // Блокируем прокрутку страницы при открытой модалке
+                document.body.style.overflow = "hidden";
+              })
+              .catch((err) => {
+                console.error("Ошибка в fetch:", err);
+                alert("Не удалось загрузить данные документов: " + err.message);
+              });
+          },
+          closeDocs() {
+            this.showDocModal = false;
+            document.body.style.overflow = "auto";
+          },
+        },
+        watch: {
+          activeMenu(newVal) {
+            if (newVal === "Выйти из аккаунта") {
+              this.confirmLogout();
+              return;
+            }
+
+            if (newVal === "Мои данные") {
+              this.loadUserProfile();
+            }
+            // ИСПРАВЛЕНИЕ: Теперь для "Пользовательские маршруты" (было "Все маршруты")
+            if (
+              newVal === "Пользовательские маршруты" ||
+              newVal === "Маршруты на сайте" ||
+              newVal === "Предложенные маршруты"
+            ) {
+              this.loadAllSystemRoutes();
+            }
           },
         },
         mounted() {
@@ -835,6 +1150,76 @@
           this.loadUserGroups();
         },
       }).mount("#app");
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9c743b77ba6d19ff',t:'MTc2OTk3ODA5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9c8a617bd9e3c7f0',t:'MTc3MDIxMDMzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
     </script>
   </body>
 </html>
