@@ -400,8 +400,10 @@
               <button class="control-btn">- Снаряжение</button>
             </div>
 
-            <div class="days-list">
-              <div class="day-item">Список снаряжения пуст</div>
+            <div class="days-list" data-equipment-list>
+              <div class="day-item" data-equipment-item>
+                Список снаряжения пуст
+              </div>
             </div>
           </div>
 
@@ -512,18 +514,27 @@
 
         // --- 4. РЕДАКТИРОВАНИЕ ЗАГОЛОВКА МАРШРУТА ---
         modalTitle.addEventListener("dblclick", () => {
+          // Блокируем редактирование, ТОЛЬКО если сейчас открыта вкладка "Дни"
           if (
-            document.getElementById("tab-content-days").style.display !==
+            document.getElementById("tab-content-distance").style.display ===
             "block"
-          )
+          ) {
+            modalTitle.contentEditable = false;
             return;
+          }
+
+          // Во всех остальных вкладках — разрешаем
           modalTitle.contentEditable = true;
+          modalTitle.classList.add("editing-title"); // Опционально для стилей
           modalTitle.focus();
         });
+
         modalTitle.addEventListener("blur", () => {
           modalTitle.contentEditable = false;
+          modalTitle.classList.remove("editing-title");
           routeName = modalTitle.textContent.trim() || "Название маршрута";
         });
+
         modalTitle.addEventListener("keydown", (e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -787,13 +798,13 @@
               : '<i class="fas fa-ruler" style="margin-right: 8px; color: #6c757d;"></i>';
 
           row.innerHTML = `
-        <span style="color:#555; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
-            <strong>${name1}</strong> : <strong>${name2}</strong>
-        </span>
-        <span style="font-weight:bold; color:#303f69; white-space:nowrap; margin-left: 10px;">
-            ${icon} ${distStr}
-        </span>
-    `;
+              <span style="color:#555; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
+                  <strong>${name1}</strong> : <strong>${name2}</strong>
+              </span>
+              <span style="font-weight:bold; color:#303f69; white-space:nowrap; margin-left: 10px;">
+                  ${icon} ${distStr}
+              </span>
+          `;
           container.appendChild(row);
         }
 
@@ -1058,30 +1069,92 @@
         const cancelCostBtn = document.getElementById("cancel-cost-btn");
         const costInput = document.getElementById("org-cost-input");
         const descArea = document.getElementById("route-desc-area"); // Textarea описания
-
+        const equipment = document.querySelector("[data-equipment-list]");
         // Обработчик первой кнопки "Сохранить" (Валидация)
         mainSaveBtn.onclick = function () {
-          // А. Проверка заполнения формы (Описания и Фото)
           const desc = descArea.value.trim();
 
+          // --- Фото ---
           const previews = document.querySelectorAll(".photo-preview");
           const filledPhotos = Array.from(previews).every(
             (img) => img.style.display === "block" && img.src,
           );
 
           if (!desc || !filledPhotos) {
-            alert("данные в модальном окне не заполены");
+            alert("Заполните описание и добавьте все фотографии");
             document.querySelectorAll(".nav-tab")[0].click();
             return;
           }
 
-          // Б. Проверка наличия точек (минимум 1)
+          // --- Точки на карте ---
           if (markers.length === 0) {
             alert("Добавьте хотя бы одну точку на карту");
             return;
           }
 
-          // Если все ок -> Показываем окно стоимости
+          // ================= ДНИ =================
+          const days = document.querySelectorAll(
+            "#tab-content-days .days-list > .day-item",
+          );
+
+          if (days.length === 0) {
+            alert("Добавьте хотя бы один день");
+            document.querySelectorAll(".nav-tab")[1].click();
+            return;
+          }
+
+          let daysValid = true;
+
+          days.forEach((day) => {
+            const records = day.querySelectorAll(".record-item");
+
+            if (records.length === 0) daysValid = false;
+
+            records.forEach((rec) => {
+              const select = rec.querySelector(
+                'select[data-field-type="point"]',
+              );
+              const textInput = rec.querySelector(
+                'input[data-field-type="text"]',
+              );
+              const switchBtn = rec.querySelector(".record-switch");
+
+              const isTextMode = switchBtn && switchBtn.textContent === "Текст";
+
+              if (isTextMode) {
+                if (!textInput.value.trim()) daysValid = false;
+              } else {
+                if (!select.value) daysValid = false;
+              }
+            });
+          });
+
+          if (!daysValid) {
+            alert(
+              "Во вкладке 'Дни' должен быть хотя бы один день и заполненная запись",
+            );
+            document.querySelectorAll(".nav-tab")[1].click();
+            return;
+          }
+
+          // ================= СНАРЯЖЕНИЕ =================
+          const gearItems = document.querySelectorAll(
+            "#tab-content-gear .days-list .day-item",
+          );
+
+          const realGear = Array.from(gearItems).filter(
+            (item) =>
+              !item.textContent.includes("пуст") &&
+              item.textContent.trim() !== "",
+          );
+
+          if (realGear.length === 0) {
+            alert("Добавьте хотя бы одно снаряжение");
+            document.querySelectorAll(".nav-tab")[4].click();
+            return;
+          }
+
+          // === ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ ===
           costModal.style.display = "flex";
           costInput.focus();
         };
@@ -1539,10 +1612,10 @@
                   d.style.borderRadius = "4px";
 
                   d.innerHTML = `
-                <input placeholder="Название" value="${costItem.name}" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                <input type="number" placeholder="0" value="${costItem.amount || 0}" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
-            `;
+                      <input placeholder="Название" value="${costItem.name}" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                      <input type="number" placeholder="0" value="${costItem.amount || 0}" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                      <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
+                  `;
 
                   // Добавляем обработчик удаления
                   const removeBtn = d.querySelector("button");
@@ -1801,10 +1874,10 @@
                   d.style.borderRadius = "4px";
 
                   d.innerHTML = `
-                        <input placeholder="Название" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                        <input type="number" placeholder="0" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                        <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
-                    `;
+                              <input placeholder="Название" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                              <input type="number" placeholder="0" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                              <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
+                          `;
 
                   // Добавляем обработчик удаления
                   const removeBtn = d.querySelector("button");

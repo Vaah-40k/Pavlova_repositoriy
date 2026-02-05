@@ -704,29 +704,6 @@ app.post("/api/admin/publish-route", async (req, res) => {
       .json({ message: "Ошибка сервера при публикации", error: error.message });
   }
 });
-app.post("/api/admin/reject-route", async (req, res) => {
-  const { routeId, reason } = req.body;
-
-  try {
-    await Custum_Route.update(
-      {
-        status: "rejected",
-        rejection_reason: reason,
-      },
-      {
-        where: {
-          Route_custom_ID: routeId,
-        },
-      },
-    );
-
-    res.json({ success: true });
-  } catch (e) {
-    console.error("REJECT ERROR:", e);
-    res.status(500).json({ message: e.message });
-  }
-});
-
 // ПУБЛИКАЦИЯ ГИДОМ МАРШРУТА
 app.post("/api/custom-routes/publish/:id", async (req, res) => {
   try {
@@ -956,7 +933,6 @@ app.get("/api/user-routes", async (req, res) => {
         description: custom.Route_Description || "",
         type: "custom",
         status: custom.status || "private", // Здесь используется customRoute
-        rejection_reason: custom.rejection_reason,
       });
     }
 

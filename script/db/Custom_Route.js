@@ -52,10 +52,6 @@ module.exports = function (sequelize) {
       Cost_organization: {
         type: DataTypes.INTEGER,
       },
-      rejection_reason: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
       Photo1: {
         type: DataTypes.STRING,
       },
@@ -138,7 +134,11 @@ module.exports = function (sequelize) {
         allowNull: true,
       },
       Map_Center: {
-        type: DataTypes.STRING, // Будем хранить как "lat,lng"
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      rejection_reason: {
+        type: DataTypes.TEXT,
         allowNull: true,
       },
     },
