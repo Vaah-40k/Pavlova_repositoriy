@@ -1,326 +1,371 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>TrekPlan - Маршруты</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <title>TrekPlan - Маршруты</title>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-</head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="container">
+          <div class="header-content">
+            <a href="/" class="logo" style="margin-left: 4%">
+              <b>TrekPlan</b></a
+            >
 
-<body>
-  <div id="app">
-    <header>
-      <div class="container">
-        <div class="header-content">
-          <a href="/" class="logo" style="margin-left:4% ;"> <b>TrekPlan</b></a>
-
-          <button class="mobile-menu-btn" @click="toggleMobileMenu">
-            <i class="fas fa-bars"></i>
-          </button>
-
-          <ul class="nav-menu">
-            <div class="nav-li">
-              <li><a href="/scheduler">Планировщик</a></li>
-              <li><a href="/trek" class="active" style="margin-left: 3em">Маршруты</a></li>
-            </div>
-            <button class="btn-login" style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%">
-              <a v-if="!isLoggedIn" href="/autorization">Войти</a>
-              <a v-else href="/lk">Личный кабинет</a>
-            </button>
-          </ul>
-        </div>
-      </div>
-    </header>
-
-    <section class="hero-2">
-      <h1>Зимние маршруты</h1>
-      <p>Выберите свое приключение на ближайшие 4 месяца</p>
-      <input class="search" type="text" v-model="search" placeholder="Поиск маршрута..." />
-    </section>
-
-    <section class="container cards">
-      <div v-for="route in paginatedRoutes" :key="route.Route_ID" class="route-card width_trek">
-        <h3>{{ route.Route_Name }}</h3>
-        <p class="desc">{{ route.Route_Description }}</p>
-
-        <div class="images">
-          <div class="img big"
-            :style="{ backgroundImage: 'url(https://loremflickr.com/400/300/winter,mountain?lock=' + route.Route_ID + ')' }">
-          </div>
-          <div class="img small"
-            :style="{ backgroundImage: 'url(https://loremflickr.com/200/200/snow?lock=' + route.Route_ID + ')' }"></div>
-          <div class="img small"
-            :style="{ backgroundImage: 'url(https://loremflickr.com/200/200/forest,winter?lock=' + route.Route_ID + ')' }">
-          </div>
-        </div>
-
-        <div class="info">
-          <span><i class="fas fa-map-marker-alt"></i> {{ route.Stop }}</span>
-          <span><i class="fas fa-hiking"></i> {{ route.Route_Length }} км</span>
-          <span><i class="fas fa-clock"></i> {{ formatDuration(route.Route_Duration) }}</span>
-          <button class="btn" @click="openBooking(route)" :disabled="loadingId === route.Route_ID">
-            <span v-if="loadingId === route.Route_ID" class="spinner"></span>
-            <span v-else>Принять участие</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <div class="pagination">
-      <button v-for="page in totalPages" :key="page" :class="{ active: currentPage === page }"
-        @click="currentPage = page">
-        {{ page }}
-      </button>
-    </div>
-
-    <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
-      <div class="modal-content">
-        <template v-if="!isBooked">
-          <h2>Выберите дату</h2>
-          <div class="date-list">
-            <button v-for="displayDate in winterDisplayDates" @click="confirmBooking(displayDate)" class="date-item">
-              {{ displayDate }}
-            </button>
-          </div>
-        </template>
-        <template v-else>
-          <div class="success-msg">
-            <i class="fas fa-check-circle"></i>
-            <p>Вы успешно записаны на маршрут!</p>
-            <small>Просмотреть детали можно в личном кабинете.</small>
-            <button class="btn" @click="goToLk">В личный кабинет</button>
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <!-- Футер -->
-    <footer>
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-about">
-            <div class="footer-logo">TrekPlan</div>
-            <p>
-              Приложение для планирования маршрутов активного отдыха.
-              Открывайте новые места и создавайте незабываемые приключения с
-              TrekPlan.
-            </p>
-          </div>
-
-          <div class="footer-links">
-            <h3>Навигация</h3>
-            <ul>
-              <li><a href="./">Главная</a></li>
-              <li><a href="#about">О приложении</a></li>
-              <li><a href="#features">Возможности</a></li>
+            <ul class="nav-menu">
+              <div class="nav-li">
+                <li><a href="/scheduler">Планировщик</a></li>
+                <li>
+                  <a href="/trek" class="active" style="margin-left: 3em"
+                    >Маршруты</a
+                  >
+                </li>
+              </div>
+              <button
+                class="btn-login"
+                style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%"
+              >
+                <a v-if="!isLoggedIn" href="/autorization">Войти</a>
+                <a v-else href="/lk">Личный кабинет</a>
+              </button>
             </ul>
           </div>
+        </div>
+      </header>
 
-          <div class="footer-contact">
-            <h3>Контакты</h3>
-            <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
-            <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
-            <p>
-              <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
-              15
-            </p>
-            <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+      <section class="hero-2">
+        <h1>Зимние маршруты</h1>
+        <p>Выберите свое приключение на ближайшие 4 месяца</p>
+        <input
+          class="search"
+          type="text"
+          v-model="search"
+          placeholder="Поиск маршрута..."
+        />
+      </section>
+
+      <section class="container cards">
+        <div
+          v-for="route in paginatedRoutes"
+          :key="route.Route_ID"
+          class="route-card width_trek"
+        >
+          <h3>{{ route.Route_Name }}</h3>
+          <p class="desc">{{ route.Route_Description }}</p>
+
+          <div class="images">
+            <div
+              class="img big"
+              :style="{ backgroundImage: 'url(https://loremflickr.com/400/300/winter,mountain?lock=' + route.Route_ID + ')' }"
+            ></div>
+            <div
+              class="img small"
+              :style="{ backgroundImage: 'url(https://loremflickr.com/200/200/snow?lock=' + route.Route_ID + ')' }"
+            ></div>
+            <div
+              class="img small"
+              :style="{ backgroundImage: 'url(https://loremflickr.com/200/200/forest,winter?lock=' + route.Route_ID + ')' }"
+            ></div>
+          </div>
+
+          <div class="info">
+            <span><i class="fas fa-map-marker-alt"></i> {{ route.Stop }}</span>
+            <span
+              ><i class="fas fa-hiking"></i> {{ route.Route_Length }} км</span
+            >
+            <span
+              ><i class="fas fa-clock"></i> {{
+              formatDuration(route.Route_Duration) }}</span
+            >
+            <button
+              class="btn"
+              @click="openBooking(route)"
+              :disabled="loadingId === route.Route_ID"
+            >
+              <span v-if="loadingId === route.Route_ID" class="spinner"></span>
+              <span v-else>Принять участие</span>
+            </button>
           </div>
         </div>
+      </section>
+
+      <div class="pagination">
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          :class="{ active: currentPage === page }"
+          @click="currentPage = page"
+        >
+          {{ page }}
+        </button>
       </div>
-    </footer>
-  </div>
 
-  <script>
-    const { createApp } = Vue;
+      <div
+        class="modal-overlay"
+        v-if="showModal"
+        @click.self="showModal = false"
+      >
+        <div class="modal-content">
+          <template v-if="!isBooked">
+            <h2>Выберите дату</h2>
+            <div class="date-list">
+              <button
+                v-for="displayDate in winterDisplayDates"
+                @click="confirmBooking(displayDate)"
+                class="date-item"
+              >
+                {{ displayDate }}
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="success-msg">
+              <i class="fas fa-check-circle"></i>
+              <p>Вы успешно записаны на маршрут!</p>
+              <small>Просмотреть детали можно в личном кабинете.</small>
+              <button class="btn" @click="goToLk">В личный кабинет</button>
+            </div>
+          </template>
+        </div>
+      </div>
 
-    createApp({
-      data() {
-        return {
-          routes: [],
-          search: '',
-          currentPage: 1,      // Текущая активная страница
-          itemsPerPage: 3,
-          showModal: false,
-          selectedRoute: null,
-          isBooked: false,
-          loadingId: null,
-          isLoggedIn: false,
-          mobileMenuActive: false,
-          winterDisplayDates: ['15 Декабря', '10 Января', '05 Февраля', '20 Марта'],
-          winterIsoDates: {
-            '15 Декабря': '2025-12-15',
-            '10 Января': '2026-01-10',
-            '05 Февраля': '2026-02-05',
-            '20 Марта': '2026-03-20'
-          }
-        }
-      },
-      computed: {
-        // Список маршрутов только для текущей страницы
-        paginatedRoutes() {
-          const start = (this.currentPage - 1) * this.itemsPerPage;
-          const end = start + this.itemsPerPage;
-          return this.routes.slice(start, end);
+      <!-- Футер -->
+      <footer>
+        <div class="container">
+          <div class="footer-content">
+            <div class="footer-about">
+              <div class="footer-logo">TrekPlan</div>
+              <p>
+                Приложение для планирования маршрутов активного отдыха.
+                Открывайте новые места и создавайте незабываемые приключения с
+                TrekPlan.
+              </p>
+            </div>
+
+            <div class="footer-links">
+              <h3>Навигация</h3>
+              <ul>
+                <li><a href="./">Главная</a></li>
+                <li><a href="#about">О приложении</a></li>
+                <li><a href="#features">Возможности</a></li>
+              </ul>
+            </div>
+
+            <div class="footer-contact">
+              <h3>Контакты</h3>
+              <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
+              <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
+              <p>
+                <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
+                15
+              </p>
+              <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      createApp({
+        data() {
+          return {
+            routes: [],
+            search: "",
+            currentPage: 1, // Текущая активная страница
+            itemsPerPage: 3,
+            showModal: false,
+            selectedRoute: null,
+            isBooked: false,
+            loadingId: null,
+            isLoggedIn: false,
+            mobileMenuActive: false,
+            winterDisplayDates: [
+              "15 Декабря",
+              "10 Января",
+              "05 Февраля",
+              "20 Марта",
+            ],
+            winterIsoDates: {
+              "15 Декабря": "2025-12-15",
+              "10 Января": "2026-01-10",
+              "05 Февраля": "2026-02-05",
+              "20 Марта": "2026-03-20",
+            },
+          };
         },
-        // Общее количество страниц
-        totalPages() {
-          return Math.ceil(this.routes.length / this.itemsPerPage);
-        }
-      },
-      methods: {
-        formatDuration(timeStr) {
-          if (!timeStr) return '';
-          const parts = timeStr.split(':');
-          if (parts.length < 2) return timeStr;
-
-          const hours = parseInt(parts[0], 10);
-          const minutes = parseInt(parts[1], 10);
-
-          const decimal = hours + (minutes / 60);
-          return parseFloat(decimal.toFixed(1)) + ' часов';
+        computed: {
+          // Список маршрутов только для текущей страницы
+          paginatedRoutes() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.routes.slice(start, end);
+          },
+          // Общее количество страниц
+          totalPages() {
+            return Math.ceil(this.routes.length / this.itemsPerPage);
+          },
         },
-        async loadPage(p) {
-          this.currentPage = p;
-          const res = await fetch(`/routes?page=${p}`);
-          const data = await res.json();
-          this.routes = data.routes;
-        },
-        openBooking(route) {
-          if (!this.isLoggedIn) {
-            window.location.href = '/autorization';
-            return;
-          }
-          this.loadingId = route.Route_ID;
-          this.selectedRoute = route;
-          setTimeout(() => {
-            this.loadingId = null;
-            this.showModal = true;
-            this.isBooked = false;
-          }, 500);
-        },
-        async confirmBooking(displayDate) {
-          const isoDate = this.winterIsoDates[displayDate];
-          try {
-            const res = await fetch('/api/join-route', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                routeId: this.selectedRoute.Route_ID,
-                date: isoDate
-              })
-            });
+        methods: {
+          formatDuration(timeStr) {
+            if (!timeStr) return "";
+            const parts = timeStr.split(":");
+            if (parts.length < 2) return timeStr;
 
-            if (!res.ok) {
-              const errorData = await res.json();
-              alert(errorData.error || "Ошибка при записи");
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+
+            const decimal = hours + minutes / 60;
+            return parseFloat(decimal.toFixed(1)) + " часов";
+          },
+          async loadPage(p) {
+            this.currentPage = p;
+            const res = await fetch(`/routes?page=${p}`);
+            const data = await res.json();
+            this.routes = data.routes;
+          },
+          openBooking(route) {
+            if (!this.isLoggedIn) {
+              window.location.href = "/autorization";
               return;
             }
+            this.loadingId = route.Route_ID;
+            this.selectedRoute = route;
+            setTimeout(() => {
+              this.loadingId = null;
+              this.showModal = true;
+              this.isBooked = false;
+            }, 500);
+          },
+          async confirmBooking(displayDate) {
+            const isoDate = this.winterIsoDates[displayDate];
+            try {
+              const res = await fetch("/api/join-route", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  routeId: this.selectedRoute.Route_ID,
+                  date: isoDate,
+                }),
+              });
 
-            const result = await res.json();
-            if (result.status === "ok") {
-              this.isBooked = true;
-            } else {
-              alert(result.error || "Ошибка при записи");
+              if (!res.ok) {
+                const errorData = await res.json();
+                alert(errorData.error || "Ошибка при записи");
+                return;
+              }
+
+              const result = await res.json();
+              if (result.status === "ok") {
+                this.isBooked = true;
+              } else {
+                alert(result.error || "Ошибка при записи");
+              }
+            } catch (e) {
+              console.error(e);
+              alert("Ошибка сети");
             }
-          } catch (e) {
-            console.error(e);
-            alert("Ошибка сети");
-          }
+          },
+          toggleMobileMenu() {
+            this.mobileMenuActive = !this.mobileMenuActive;
+          },
+          goToLk() {
+            window.location.href = "/lk";
+          },
         },
-        toggleMobileMenu() {
-          this.mobileMenuActive = !this.mobileMenuActive;
+        mounted() {
+          this.loadPage(1);
+          fetch("/api/auth-status")
+            .then((r) => r.json())
+            .then((d) => {
+              this.isLoggedIn = d.isAuthenticated;
+              // Сброс модала на всякий случай
+              this.showModal = false;
+              this.isBooked = false;
+              this.selectedRoute = null;
+              this.loadingId = null;
+            })
+            .catch((err) => {
+              console.error("Ошибка auth:", err);
+              this.isLoggedIn = false;
+            });
         },
-        goToLk() {
-          window.location.href = '/lk';
+      }).mount("#app");
+    </script>
+
+    <style>
+      /* Доп. стили для анимации и модалки, которых нет в базовом css */
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 3px solid #fff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        display: inline-block;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-      },
-      mounted() {
-        this.loadPage(1);
-        fetch('/api/auth-status')
-          .then(r => r.json())
-          .then(d => {
-            this.isLoggedIn = d.isAuthenticated;
-            // Сброс модала на всякий случай
-            this.showModal = false;
-            this.isBooked = false;
-            this.selectedRoute = null;
-            this.loadingId = null;
-          })
-          .catch(err => {
-            console.error('Ошибка auth:', err);
-            this.isLoggedIn = false;
-          });
       }
-    }).mount('#app');
-  </script>
 
-  <style>
-    /* Доп. стили для анимации и модалки, которых нет в базовом css */
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid #fff;
-      border-top-color: transparent;
-      border-radius: 50%;
-      display: inline-block;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
       }
-    }
 
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+      }
 
-    .modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-    }
+      .date-item {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+      }
 
-    .date-item {
-      display: block;
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+      .date-item:hover {
+        background: #f0f4f8;
+        border-color: #5b7db1;
+      }
 
-    .date-item:hover {
-      background: #f0f4f8;
-      border-color: #5b7db1;
-    }
+      .success-msg {
+        color: green;
+      }
 
-    .success-msg {
-      color: green;
-    }
-
-    .success-msg i {
-      font-size: 50px;
-      margin-bottom: 10px;
-    }
-  </style>
-</body>
-
+      .success-msg i {
+        font-size: 50px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </body>
 </html>

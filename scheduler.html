@@ -260,81 +260,6 @@
                 </div>
               </div>
 
-              <div
-                id="org-cost-modal"
-                style="
-                  display: none;
-                  position: fixed;
-                  top: 0;
-                  left: 0;
-                  width: 100%;
-                  height: 100%;
-                  background: rgba(0, 0, 0, 0.5);
-                  z-index: 9999;
-                  align-items: center;
-                  justify-content: center;
-                "
-              >
-                <div
-                  style="
-                    background: white;
-                    padding: 25px;
-                    border-radius: 12px;
-                    width: 350px;
-                    text-align: center;
-                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-                  "
-                >
-                  <h3 style="margin-top: 0; color: #333">
-                    Сколько будет организационный взнос?
-                  </h3>
-                  <input
-                    type="number"
-                    id="org-cost-input"
-                    placeholder="0"
-                    min="0"
-                    style="
-                      width: 100%;
-                      padding: 10px;
-                      font-size: 16px;
-                      margin: 15px 0;
-                      border: 1px solid #ccc;
-                      border-radius: 6px;
-                    "
-                  />
-                  <div
-                    style="display: flex; gap: 10px; justify-content: center"
-                  >
-                    <button
-                      id="cancel-cost-btn"
-                      style="
-                        padding: 8px 16px;
-                        border: 1px solid #ccc;
-                        background: #f8f9fa;
-                        border-radius: 6px;
-                        cursor: pointer;
-                      "
-                    >
-                      Отмена
-                    </button>
-                    <button
-                      id="save-final-btn"
-                      style="
-                        padding: 8px 16px;
-                        border: none;
-                        background: #007bff;
-                        color: white;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: bold;
-                      "
-                    >
-                      Сохранить маршрут
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               <label
                 style="display: block; margin-bottom: 10px; font-weight: bold"
                 >Описание маршрута</label
@@ -394,7 +319,11 @@
             <div class="days-list"></div>
           </div>
 
-          <div id="tab-content-gear" class="tab-content" style="display: none">
+          <div
+            id="tab-content-equipment"
+            class="tab-content"
+            style="display: none"
+          >
             <div class="modal-controls">
               <button class="control-btn active">+ Снаряжение</button>
               <button class="control-btn">- Снаряжение</button>
@@ -798,13 +727,13 @@
               : '<i class="fas fa-ruler" style="margin-right: 8px; color: #6c757d;"></i>';
 
           row.innerHTML = `
-              <span style="color:#555; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
-                  <strong>${name1}</strong> : <strong>${name2}</strong>
-              </span>
-              <span style="font-weight:bold; color:#303f69; white-space:nowrap; margin-left: 10px;">
-                  ${icon} ${distStr}
-              </span>
-          `;
+                  <span style="color:#555; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
+                      <strong>${name1}</strong> : <strong>${name2}</strong>
+                  </span>
+                  <span style="font-weight:bold; color:#303f69; white-space:nowrap; margin-left: 10px;">
+                      ${icon} ${distStr}
+                  </span>
+              `;
           container.appendChild(row);
         }
 
@@ -1138,17 +1067,17 @@
           }
 
           // ================= СНАРЯЖЕНИЕ =================
-          const gearItems = document.querySelectorAll(
-            "#tab-content-gear .days-list .day-item",
+          const equipmentItems = document.querySelectorAll(
+            "#tab-content-equipment .days-list .day-item",
           );
 
-          const realGear = Array.from(gearItems).filter(
+          const realequipment = Array.from(equipmentItems).filter(
             (item) =>
               !item.textContent.includes("пуст") &&
               item.textContent.trim() !== "",
           );
 
-          if (realGear.length === 0) {
+          if (realequipment.length === 0) {
             alert("Добавьте хотя бы одно снаряжение");
             document.querySelectorAll(".nav-tab")[4].click();
             return;
@@ -1223,6 +1152,50 @@
             });
           });
 
+          const routeDaysPayload = [];
+
+          const daysItems = document.querySelectorAll(
+            "#tab-content-days .days-list > .day-item",
+          );
+
+          daysItems.forEach((dayEl) => {
+            const dayRecords = [];
+            const records = dayEl.querySelectorAll(".record-item");
+
+            records.forEach((rec) => {
+              const select = rec.querySelector(
+                'select[data-field-type="point"]',
+              );
+              const textInput = rec.querySelector(
+                'input[data-field-type="text"]',
+              );
+              const timeInput = rec.querySelector('input[type="time"]');
+              const switchBtn = rec.querySelector(".record-switch");
+
+              // Определяем режим (Текст или Точка)
+              const isTextMode = switchBtn
+                ? switchBtn.textContent === "Текст"
+                : false;
+
+              // Собираем данные одной записи
+              dayRecords.push({
+                time: timeInput ? timeInput.value : "12:00",
+                is_text: isTextMode,
+                // Если точка - сохраняем имя точки, если текст - сохраняем null
+                point_name: !isTextMode && select ? select.value : null,
+                // Если текст - сохраняем текст заметки
+                note: isTextMode && textInput ? textInput.value : null,
+                // Индекс точки для совместимости (можно убрать, если не используется)
+                point_index:
+                  !isTextMode && select && select.value
+                    ? pointNames.indexOf(select.value) + 1
+                    : 0,
+              });
+            });
+
+            routeDaysPayload.push(dayRecords);
+          });
+
           // 3. Дистанция
           let len = 0,
             dur = "";
@@ -1242,11 +1215,10 @@
           formData.append("map_zoom", map.getZoom());
           formData.append("map_center", `${center.lat},${center.lng}`);
           formData.append("cost_organization", orgCost); // Наш новый взнос
-
+          formData.append("Route_Days", JSON.stringify(routeDaysPayload));
           // Сложные массивы шлем как JSON строки
           formData.append("points", JSON.stringify(pointsData));
-          formData.append("schedule", JSON.stringify(scheduleData));
-          formData.append("gear", JSON.stringify(getGearList())); // Функция getGearList у вас уже есть
+          formData.append("equipment", JSON.stringify(getequipmentList())); // Функция getequipmentList у вас уже есть
           formData.append("costs", JSON.stringify(getCostList())); // Функция getCostList у вас уже есть
 
           // Добавляем файлы
@@ -1274,41 +1246,29 @@
         };
 
         // Вспомогательные функции для списков
-        function getGearList() {
+        function getequipmentList() {
           const items = document.querySelectorAll(
-            "#tab-content-gear .days-list .day-item",
+            "#tab-content-equipment .days-list .day-item",
           );
-          const gearList = [];
+
+          const equipmentList = [];
 
           items.forEach((item) => {
-            // Пропускаем заглушку "пустой список"
-            if (
-              item.textContent.includes("пуст") ||
-              item.textContent.includes("Список снаряжения пуст")
-            ) {
-              return;
-            }
+            // Пропускаем заглушку
+            if (item.textContent.includes("Список снаряжения пуст")) return;
 
-            // Для снаряжения ищем текстовый элемент (span)
-            const textSpan = item.querySelector("span");
-            // Или обычный текстовый контент
-            const textContent = item.textContent.trim();
+            // Берём ТОЛЬКО текст из span (без кнопки ×)
+            const span = item.querySelector("span");
+            if (!span) return;
 
-            let gearName = "";
+            const name = span.textContent.trim();
 
-            if (textSpan && textSpan.textContent.trim()) {
-              gearName = textSpan.textContent.trim();
-            } else if (textContent && !textContent.includes("×")) {
-              // Убираем символ удаления если есть
-              gearName = textContent.replace("×", "").trim();
-            }
-
-            if (gearName && gearName !== "Новая вещь") {
-              gearList.push(gearName);
+            if (name && name !== "Новая вещь") {
+              equipmentList.push(name);
             }
           });
 
-          return gearList;
+          return equipmentList;
         }
 
         function getCostList() {
@@ -1359,11 +1319,8 @@
             // 1. Имя
             routeName = data.name;
             modalTitle.textContent = routeName;
-
-            if (data.description) {
-              const descArea = document.getElementById("route-desc-area");
-              if (descArea) descArea.value = data.description;
-            }
+            document.getElementById("route-desc-area").value =
+              data.description || "";
 
             // 2. Фотографии
             // Ожидается, что сервер отдает массив data.photos
@@ -1399,6 +1356,7 @@
                 slot.querySelector("i").style.display = "block";
               });
             }
+
             // 2. Точки
             if (data.points) {
               data.points.forEach((pt) => addMarker(pt.lat, pt.lng, pt.name));
@@ -1408,127 +1366,30 @@
               // Строим маршрут
               await recalculateRoute();
             }
-
-            // 3. Расписание (ВОССТАНОВЛЕНИЕ ДНЕЙ)
-            if (data.schedule && data.schedule.length > 0) {
-              const daysList = document.querySelector(
-                "#tab-content-days .days-list",
-              );
-              daysList.innerHTML = ""; // Очищаем дефолтный "День 1"
-
-              // Сортируем записи по дате и времени
-              data.schedule.sort((a, b) => {
-                const dateA = new Date(a.visit_date + "T" + a.visit_time);
-                const dateB = new Date(b.visit_date + "T" + b.visit_time);
-                return dateA - dateB;
-              });
-
-              // Группируем записи строго по Дате (YYYY-MM-DD)
-              // Объект будет вида: { "2026-01-26": [record1, record2], "2026-01-27": [...] }
-              const groupedByDate = {};
-
-              data.schedule.forEach((item) => {
-                // Берем только дату (первые 10 символов: YYYY-MM-DD)
-                // item.visit_date может быть "2026-01-26T00:00:00.000Z" или просто "2026-01-26"
-                const dateKey = item.visit_date.substring(0, 10);
-
-                if (!groupedByDate[dateKey]) {
-                  groupedByDate[dateKey] = [];
-                }
-
-                groupedByDate[dateKey].push(item);
-              });
-
-              // Проходимся по уникальным датам и создаем Дни
-              // Object.keys не гарантирует порядок, поэтому лучше явно отсортировать даты
-              const sortedDates = Object.keys(groupedByDate).sort();
-
-              sortedDates.forEach((dateKey, index) => {
-                const records = groupedByDate[dateKey];
-
-                // Создаем заголовок "День N"
-                const dayTitle = `День ${index + 1}`;
-                const dayEl = createDayElement(dayTitle);
-                const recList = dayEl.querySelector(".record-list");
-
-                // Добавляем записи внутрь дня
-                records.forEach((item) => {
-                  // Восстанавливаем имя точки по индексу
-                  let pName = "";
-                  if (
-                    item.point_index > 0 &&
-                    pointNames[item.point_index - 1]
-                  ) {
-                    pName = pointNames[item.point_index - 1];
-                  }
-
-                  // Определяем тип записи
-                  // is_text приходит из БД (0 или 1), либо определяем по индексу точки
-                  const isText = item.is_text === 1 || item.point_index === 0;
-
-                  // Если это текстовая запись, то Note - это текст пользователя.
-                  // Если это точка, Note - это техническая заметка (или пустая).
-                  const noteText = item.note || "";
-
-                  // Форматируем время (обрезаем секунды)
-                  const timeStr = item.visit_time
-                    ? item.visit_time.substring(0, 5)
-                    : "12:00";
-
-                  if (isText) {
-                    // Текстовая запись
-                    // addRecordToDay(container, time, pointName, textVal, isTextMode)
-                    addRecordToDay(recList, timeStr, "", noteText, true);
-                  } else {
-                    // Запись с точкой
-                    addRecordToDay(recList, timeStr, pName, "", false);
-                  }
-                });
-
-                daysList.appendChild(dayEl);
-              });
-
-              // Если вдруг в расписании пусто (чего быть не должно при проверке length > 0),
-              // создадим хотя бы один пустой день
-              if (daysList.children.length === 0) {
-                const day = createDayElement("День 1");
-                daysList.appendChild(day);
-              }
-
-              // Активируем первый день
-              if (daysList.firstChild) {
-                daysList.firstChild.classList.add("active");
-              }
-            } else {
-              // Если расписания нет совсем, оставляем "День 1" (который там есть по умолчанию в HTML)
-              // Или пересоздаем его, если список был очищен
-              const daysList = document.querySelector(
-                "#tab-content-days .days-list",
-              );
-              if (daysList.children.length === 0) {
-                const day = createDayElement("День 1");
-                daysList.appendChild(day);
-                day.classList.add("active");
-              }
-            }
+            await recalculateRoute();
+            restoreRouteDays(data.route_days);
 
             // 4. Снаряжение
-            if (data.gear && Array.isArray(data.gear) && data.gear.length > 0) {
-              const gearList = document.querySelector(
-                "#tab-content-gear .days-list",
+            if (
+              data.equipment &&
+              Array.isArray(data.equipment) &&
+              data.equipment.length > 0
+            ) {
+              const equipmentList = document.querySelector(
+                "#tab-content-equipment .days-list",
               );
-              gearList.innerHTML = ""; // Очищаем дефолтный текст
+              equipmentList.innerHTML = ""; // Очищаем дефолтный текст
 
-              data.gear.forEach((gearItem) => {
+              data.equipment.forEach((equipmentItem) => {
                 // Проверяем формат данных (может быть строка или объект)
-                let gearName = "";
-                if (typeof gearItem === "string") {
-                  gearName = gearItem;
-                } else if (gearItem && gearItem.name) {
-                  gearName = gearItem.name;
+                let equipmentName = "";
+                if (typeof equipmentItem === "string") {
+                  equipmentName = equipmentItem;
+                } else if (equipmentItem && equipmentItem.name) {
+                  equipmentName = equipmentItem.name;
                 }
 
-                if (gearName) {
+                if (equipmentName) {
                   const d = document.createElement("div");
                   d.className = "day-item";
                   d.style.display = "flex";
@@ -1540,7 +1401,7 @@
                   d.style.borderRadius = "4px";
 
                   const textSpan = document.createElement("span");
-                  textSpan.textContent = gearName;
+                  textSpan.textContent = equipmentName;
                   textSpan.contentEditable = true;
                   textSpan.style.flex = "1";
                   textSpan.style.padding = "5px";
@@ -1574,16 +1435,16 @@
                   delBtn.style.justifyContent = "center";
                   delBtn.onclick = () => {
                     d.remove();
-                    // Если удалили все элементы, показываем заглушку
-                    if (gearList.children.length === 0) {
-                      gearList.innerHTML =
-                        '<div class="day-item">Список снаряжения пуст</div>';
+
+                    if (list.children.length === 0) {
+                      list.innerHTML =
+                        '<div class="day-item" data-equipment-item>Список снаряжения пуст</div>';
                     }
                   };
 
                   d.appendChild(textSpan);
                   d.appendChild(delBtn);
-                  gearList.appendChild(d);
+                  equipmentList.appendChild(d);
                 }
               });
             }
@@ -1612,10 +1473,10 @@
                   d.style.borderRadius = "4px";
 
                   d.innerHTML = `
-                      <input placeholder="Название" value="${costItem.name}" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                      <input type="number" placeholder="0" value="${costItem.amount || 0}" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                      <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
-                  `;
+                          <input placeholder="Название" value="${costItem.name}" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                          <input type="number" placeholder="0" value="${costItem.amount || 0}" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                          <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
+                      `;
 
                   // Добавляем обработчик удаления
                   const removeBtn = d.querySelector("button");
@@ -1691,8 +1552,15 @@
             // Добавляем активный класс текущей кнопке
             tab.classList.add("active");
 
-            // Индексы соответствуют: 0-info, 1-days, 2-points, 3-distance, 4-gear, 5-cost
-            const ids = ["info", "days", "points", "distance", "gear", "cost"];
+            // Индексы соответствуют: 0-info, 1-days, 2-points, 3-distance, 4-equipment, 5-cost
+            const ids = [
+              "info",
+              "days",
+              "points",
+              "distance",
+              "equipment",
+              "cost",
+            ];
             const targetId = ids[i];
 
             if (targetId) {
@@ -1734,6 +1602,62 @@
             }
           } else {
             modalTitle.textContent = routeName;
+          }
+        }
+
+        function restoreRouteDays(routeDaysData) {
+          const list = document.querySelector("#tab-content-days .days-list");
+
+          if (!routeDaysData || routeDaysData === "[]") return;
+
+          list.innerHTML = "";
+
+          let daysArray = [];
+          try {
+            daysArray =
+              typeof routeDaysData === "string"
+                ? JSON.parse(routeDaysData)
+                : routeDaysData;
+            if (!Array.isArray(daysArray)) return;
+          } catch (e) {
+            console.error("Ошибка парсинга дней:", e);
+            return;
+          }
+
+          daysArray.forEach((dayRecords, dayIndex) => {
+            const dayElement = createDayElement(`День ${dayIndex + 1}`);
+            list.appendChild(dayElement);
+
+            const recordList = dayElement.querySelector(".record-list");
+
+            if (Array.isArray(dayRecords)) {
+              dayRecords.forEach((rec) => {
+                const timeVal = rec.time || "12:00";
+                const isTextMode =
+                  rec.is_text == 1 ||
+                  rec.is_text === "true" ||
+                  rec.is_text === true;
+
+                if (isTextMode) {
+                  addRecordToDay(recordList, timeVal, "", rec.note || "", true);
+                } else {
+                  addRecordToDay(
+                    recordList,
+                    timeVal,
+                    rec.point_name || `Точка ${rec.point_index || 1}`, // Fallback, если point_name нет
+                    "",
+                    false,
+                  );
+                }
+              });
+            }
+          });
+
+          if (list.firstChild) {
+            document
+              .querySelectorAll("#tab-content-days .day-item")
+              .forEach((d) => d.classList.remove("active"));
+            list.firstChild.classList.add("active");
           }
         }
 
@@ -1793,7 +1717,7 @@
         };
 
         // Инициализация кнопок Снаряжения и Стоимости
-        ["gear", "cost"].forEach((type) => {
+        ["equipment", "cost"].forEach((type) => {
           const blk = document.getElementById(`tab-content-${type}`);
           if (blk) {
             const btns = blk.querySelectorAll(".control-btn");
@@ -1804,7 +1728,7 @@
                 const d = document.createElement("div");
                 d.className = "day-item";
 
-                if (type === "gear") {
+                if (type === "equipment") {
                   // Для снаряжения: редактируемый элемент с кнопкой удаления
                   d.style.display = "flex";
                   d.style.alignItems = "center";
@@ -1874,10 +1798,10 @@
                   d.style.borderRadius = "4px";
 
                   d.innerHTML = `
-                              <input placeholder="Название" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                              <input type="number" placeholder="0" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                              <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
-                          `;
+                                  <input placeholder="Название" style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                                  <input type="number" placeholder="0" style="width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+                                  <button style="color: red; border: none; background: transparent; cursor: pointer; font-size: 18px;">&times;</button>
+                              `;
 
                   // Добавляем обработчик удаления
                   const removeBtn = d.querySelector("button");
@@ -1897,12 +1821,9 @@
                 }
 
                 // Удаляем заглушку "пустой список" если она есть
-                if (
-                  list.children.length === 1 &&
-                  (list.firstChild.textContent.includes("пуст") ||
-                    list.firstChild.textContent.includes("Список"))
-                ) {
-                  list.innerHTML = "";
+                const placeholder = list.querySelector("[data-equipment-item]");
+                if (placeholder) {
+                  placeholder.remove();
                 }
 
                 list.appendChild(d);
@@ -1920,7 +1841,7 @@
 
                     // Если после удаления список пуст, показываем заглушку
                     if (list.children.length === 0) {
-                      if (type === "gear") {
+                      if (type === "equipment") {
                         list.innerHTML =
                           '<div class="day-item">Список снаряжения пуст</div>';
                       } else {
@@ -1953,10 +1874,6 @@
           "duration",
           routeData ? routeData.duration.replace(" ч", "") : "0",
         );
-        formData.append(
-          "days",
-          document.querySelectorAll(".day-item").length || 1,
-        );
 
         // Координаты карты
         formData.append("map_zoom", map.getZoom());
@@ -1975,30 +1892,16 @@
           ),
         );
 
-        // Расписание (schedule) - собираем из вкладки "Дни"
-        const schedule = [];
-        document.querySelectorAll(".day-item").forEach((day, dayIdx) => {
-          day.querySelectorAll(".record-item").forEach((rec, recIdx) => {
-            schedule.push({
-              point_index: recIdx + 1, // Или реальный индекс точки
-              visit_date: rec.querySelector(".date-input")?.value || "",
-              visit_time: rec.querySelector(".time-input")?.value || "",
-              note: rec.querySelector(".note-input")?.value || "",
-            });
-          });
-        });
-        formData.append("schedule", JSON.stringify(schedule));
-
-        // Снаряжение (gear)
-        const gear = [];
+        // Снаряжение (equipment)
+        const equipment = [];
         document
-          .querySelectorAll("#tab-content-gear .day-item")
+          .querySelectorAll("#tab-content-equipment .day-item")
           .forEach((item) => {
             const text = item.querySelector("span")?.textContent.trim();
             if (text && text !== "Список снаряжения пуст")
-              gear.push({ name: text });
+              equipment.push({ name: text });
           });
-        formData.append("gear", JSON.stringify(gear));
+        formData.append("equipment", JSON.stringify(equipment));
 
         // Расходы (costs)
         const costs = [];
@@ -2027,6 +1930,37 @@
           }
         });
 
+        const days = [];
+        document
+          .querySelectorAll("#tab-content-days .day-item")
+          .forEach((day) => {
+            const dayRecords = [];
+            day.querySelectorAll(".record-item").forEach((rec) => {
+              const timeInput = rec.querySelector(".time-input");
+              const select = rec.querySelector(".point-select");
+              const noteInput = rec.querySelector(".note-input");
+
+              const isText = noteInput.style.display !== "none";
+              const pointIndex = isText ? 0 : parseInt(select.value) || 0;
+              const note = isText ? noteInput.value || "" : "";
+
+              // Добавление point_name (текст из выбранного option в select)
+              const pointName = isText
+                ? null
+                : select.options[select.selectedIndex]?.text || "";
+
+              dayRecords.push({
+                time: timeInput ? timeInput.value : "12:00",
+                is_text: isText,
+                point_name: pointName, // Новое: сохраняем имя точки
+                note: note,
+                point_index: pointIndex,
+              });
+            });
+            days.push(dayRecords);
+          });
+        formData.append("Route_Days", JSON.stringify(days));
+
         try {
           const res = await fetch("/api/save-custom-route", {
             method: "POST",
@@ -2052,7 +1986,8 @@
           alert("Ошибка сохранения");
         }
       }
-      saveRoute();
+
+      document.addEventListener("DOMContentLoaded", loadRouteFromUrl);
     </script>
     <script>
       (function () {
@@ -2089,5 +2024,78 @@
         }
       })();
     </script>
+
+    <div
+      id="org-cost-modal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 25px;
+          border-radius: 12px;
+          width: 350px;
+          text-align: center;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        "
+      >
+        <h3 style="margin-top: 0; color: #333" v-el>
+          Сколько будет организационный взнос?
+        </h3>
+        <input
+          type="number"
+          id="org-cost-input"
+          placeholder="0"
+          min="0"
+          style="
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+          "
+        />
+        <div style="display: flex; gap: 10px; justify-content: center">
+          <button
+            id="cancel-cost-btn"
+            style="
+              padding: 8px 16px;
+              border: 1px solid #ccc;
+              background: #f8f9fa;
+              border-radius: 6px;
+              cursor: pointer;
+            "
+          >
+            Отмена
+          </button>
+          <button
+            id="save-final-btn"
+            style="
+              padding: 8px 16px;
+              border: none;
+              background: #007bff;
+              color: white;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: bold;
+            "
+          >
+            Сохранить маршрут
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

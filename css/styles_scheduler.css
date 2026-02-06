@@ -5,7 +5,8 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #f5f5f5;
   color: #333;
 }
@@ -25,17 +26,17 @@ body {
 .container {
   max-width: 768px;
   min-width: 500px;
-  min-height: 400px;
   background-color: #e8e8e8;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   position: relative;
-  transition: height 2s ease-in-out, border-radius 2s ease-in-out !important;
+  transition:
+    height 2s ease-in-out,
+    border-radius 2s ease-in-out !important;
   display: flex;
   flex-direction: column;
 }
-
 
 .container.collapsed {
   height: 73px !important;
@@ -45,7 +46,7 @@ body {
 }
 
 /* Скрываем контент под шапкой, когда свернуто */
-.container.collapsed>*:not(.header) {
+.container.collapsed > *:not(.header) {
   opacity: 0;
   pointer-events: none;
   transition: opacity 1s;
@@ -53,7 +54,7 @@ body {
 }
 
 /* Плавное появление контента при разворачивании */
-.container:not(.collapsed)>*:not(.header) {
+.container:not(.collapsed) > *:not(.header) {
   opacity: 1;
   transition: opacity 2s;
 }
@@ -96,7 +97,6 @@ body {
   color: #999;
   z-index: 1;
   display: none;
-
 }
 
 .search-input {
@@ -245,7 +245,6 @@ body {
   padding: 12px 0;
   font-size: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-
 }
 
 .day-item:last-child {
@@ -328,8 +327,6 @@ body {
   }
 }
 
-
-
 .day-parent {
   font-weight: 600;
 }
@@ -352,9 +349,6 @@ body {
   align-items: center;
   justify-content: center;
 }
-
-
-
 
 .record-list {
   padding-left: 20px;

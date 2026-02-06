@@ -36,10 +36,8 @@ module.exports = function (sequelize) {
         type: DataTypes.STRING,
       },
       Route_Days: {
-        // Новое поле для количества дней
-        type: DataTypes.INTEGER,
+        type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: 1,
       },
       status: {
         type: DataTypes.STRING,
@@ -64,11 +62,7 @@ module.exports = function (sequelize) {
       Photo4: {
         type: DataTypes.STRING,
       },
-      Route_Days: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: 1,
-      },
+
       WaiPoint1: {
         type: DataTypes.STRING,
       },

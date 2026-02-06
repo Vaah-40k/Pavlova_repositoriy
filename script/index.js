@@ -144,7 +144,7 @@ const Working_Site = () => {
         days: 1,
         distance: "0",
         photos: [], // Добавили массив для фото
-        gear: [],
+        equipment: [],
         costs: [],
       };
 
@@ -166,7 +166,8 @@ const Working_Site = () => {
         routeData.name = route.Route_Name;
         routeData.description = route.Route_Description; // Берем описание из стандартного
         routeData.days = route.Route_Duration || "Не указано";
-        routeData.distance = route.Route_Length
+        routeData.distance = route.Route_Length;
+        routeData.Route_Days = route.Route_Days
           ? (route.Route_Length / 1000).toFixed(2)
           : "0";
 
@@ -192,7 +193,22 @@ const Working_Site = () => {
 
         routeData.name = route.Route_Name;
         routeData.description = route.Route_Description;
-        routeData.days = route.Route_Days || 1;
+
+        // Исправление: Возвращаем полный JSON дней как route_days
+        routeData.route_days = route.Route_Days;
+
+        // Исправление: days как количество дней (длина внешнего массива в JSON)
+        let numDays = 1;
+        if (route.Route_Days) {
+          try {
+            const parsedDays = JSON.parse(route.Route_Days);
+            numDays = Array.isArray(parsedDays) ? parsedDays.length : 1;
+          } catch (e) {
+            console.error("Ошибка парсинга Route_Days:", e);
+          }
+        }
+        routeData.days = numDays;
+
         routeData.distance = route.Route_Length
           ? (route.Route_Length / 1000).toFixed(2)
           : "0";
@@ -206,9 +222,11 @@ const Working_Site = () => {
         ].filter((p) => p && p.trim() !== "");
 
         try {
-          routeData.gear = route.equipment ? JSON.parse(route.equipment) : [];
+          routeData.equipment = route.equipment
+            ? JSON.parse(route.equipment)
+            : [];
         } catch (e) {
-          routeData.gear = [];
+          routeData.equipment = [];
         }
         try {
           routeData.costs = route.costs ? JSON.parse(route.costs) : [];
@@ -986,13 +1004,13 @@ app.post("/api/save-custom-route", uploadRoute.any(), async (req, res) => {
       days,
       map_zoom,
       map_center,
-      cost_organization, // Новое поле
+      cost_organization,
     } = req.body;
 
     // Парсим сложные объекты
     const points = JSON.parse(req.body.points || "[]");
     const schedule = JSON.parse(req.body.schedule || "[]");
-    const gear = JSON.parse(req.body.gear || "[]");
+    const equipment = JSON.parse(req.body.equipment || "[]");
     const costs = JSON.parse(req.body.costs || "[]");
 
     const routeDataPayload = {
@@ -1002,10 +1020,10 @@ app.post("/api/save-custom-route", uploadRoute.any(), async (req, res) => {
       Route_Duration: duration || "",
       Route_Type: "Custom",
       Terrain_Type: "Mixed",
-      Route_Days: parseInt(days) || 1,
+      Route_Days: req.body.Route_Days,
       Map_Zoom: map_zoom || null,
       Map_Center: map_center || null,
-      equipment: JSON.stringify(gear),
+      equipment: JSON.stringify(equipment),
       costs: JSON.stringify(costs),
       Cost_organization: parseInt(cost_organization) || 0, // Сохраняем взнос
       point_names: JSON.stringify(

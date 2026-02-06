@@ -563,6 +563,9 @@ footer {
   margin-bottom: 20px;
   position: relative;
 }
+.form-group select {
+  background-color: #ffffff;
+}
 
 .form-label {
   display: block;
@@ -1152,7 +1155,6 @@ select.form-input {
 .route-actions {
   display: flex;
   justify-content: space-around;
-  flex-direction: column;
 }
 .social-btn:hover {
   opacity: 0.8;
