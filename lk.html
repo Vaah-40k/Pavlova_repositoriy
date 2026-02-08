@@ -43,10 +43,6 @@
                   <b>TrekPlan</b>
                 </a>
 
-                <button class="mobile-menu-btn" @click="toggleMobileMenu">
-                  <i class="fas fa-bars"></i>
-                </button>
-
                 <ul class="nav-menu">
                   <div class="nav-li">
                     <li><a href="/scheduler">Планировщик</a></li>
@@ -98,14 +94,16 @@
                   />
                 </p>
                 <p class="title">{{ route.title }}</p>
-
                 <div
                   class="map-placeholder"
-                  :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + route.bookingId + ')', backgroundSize: 'cover' }"
+                  :style="{
+    backgroundImage: `url(${route.photo || `https://loremflickr.com/600/200/nature?lock=${route.bookingId}`})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
+  }"
                 ></div>
-
                 <div class="info">
-                  <span>Время: {{ formatDuration(route.days) }}</span>
+                  <span>Время: {{ route.duration }}</span>
                   <span>Протяженность: {{ route.distance }} км</span>
                 </div>
 
@@ -139,8 +137,78 @@
           </section>
 
           <section v-else-if="activeMenu === 'Группы'">
-            <h2 class="routesh2">Мои группы</h2>
-            <div class="groups">
+            <h2 class="routesh2">
+              {{ user.role === 'admin' ? 'Все группы гидов' : 'Мои группы' }}
+            </h2>
+            <div v-if="user.role === 'admin'" class="routes">
+              <div
+                class="route-card"
+                v-for="group in paginatedAdminGroups"
+                :key="group.id"
+              >
+                <p class="title">{{ group.route_name }}</p>
+
+                <p style="font-size: 0.9em; color: #666; margin-bottom: 10px">
+                  Гид: {{ group.guide_name }}
+                </p>
+
+                <div
+                  class="map-placeholder"
+                  :style="{
+    backgroundImage: `url(${group.route_img || `https://loremflickr.com/600/200/nature?lock=${group.id}`})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
+  }"
+                ></div>
+
+                <!-- ТОТ ЖЕ БЛОК, ЧТО У ПУТЕШЕСТВЕННИКА -->
+                <div class="route-actions" style="margin-top: 15px">
+                  <div>
+                    <a
+                      v-if="group.vk_link"
+                      :href="group.vk_link"
+                      target="_blank"
+                      class="social-btn vk"
+                    >
+                      <img
+                        src="icon/vk.png"
+                        style="width: 100%; height: 100%"
+                      />
+                    </a>
+                    <span v-else class="no-link">Нет VK</span>
+                  </div>
+
+                  <div>
+                    <a
+                      v-if="group.tg_link"
+                      :href="group.tg_link"
+                      target="_blank"
+                      class="social-btn tg"
+                    >
+                      <img
+                        src="icon/telegram.png"
+                        style="width: 100%; height: 100%"
+                      />
+                    </a>
+                    <span v-else class="no-link">Нет TG</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- пагинация -->
+              <div class="pagination" v-if="groupsTotalPages > 1">
+                <button
+                  v-for="page in groupsTotalPages"
+                  :key="page"
+                  :class="{ active: groupsPage === page }"
+                  @click="groupsPage = page"
+                >
+                  {{ page }}
+                </button>
+              </div>
+            </div>
+
+            <div v-else class="groups">
               <div
                 v-if="userGroups.length === 0"
                 class="empty-groups-container"
@@ -169,9 +237,12 @@
 
                   <div
                     class="map-placeholder"
-                    :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + group.route_img_id + ')', backgroundSize: 'cover' }"
+                    :style="{
+    backgroundImage: `url(${group.route_img || `https://loremflickr.com/600/200/nature?lock=${group.id}`})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
+  }"
                   ></div>
-
                   <div class="route-actions" style="margin-top: 15px">
                     <div>
                       <a
@@ -349,13 +420,18 @@
             <h2 class="routesh2">Официальные маршруты сайта</h2>
             <div class="admin-routes-grid">
               <div
-                v-for="route in allSystemRoutes.site"
+                v-for="route in paginatedAdminRoutes"
                 :key="route.Route_ID"
                 class="route-card"
               >
                 <div
                   class="map-placeholder"
-                  :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + route.Route_ID + ')', height: '150px', backgroundSize: 'cover' }"
+                  :style="{
+    backgroundImage: `url(${route.Photo1 || `https://loremflickr.com/600/200/nature?lock=${route.Route_ID}`})`,
+    height: '150px',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
+  }"
                 ></div>
                 <div class="card-content" style="padding: 15px">
                   <h3>{{ route.Route_Name }}</h3>
@@ -391,6 +467,17 @@
                 </div>
               </div>
             </div>
+
+            <div class="pagination" v-if="adminTotalPages > 1">
+              <button
+                v-for="page in adminTotalPages"
+                :key="page"
+                :class="{ active: adminPage === page }"
+                @click="adminPage = page"
+              >
+                {{ page }}
+              </button>
+            </div>
           </section>
 
           <section v-else-if="activeMenu === 'Предложенные маршруты'">
@@ -417,14 +504,15 @@
 
                 <div
                   class="map-placeholder"
-                  :style="{ backgroundImage: 'url(https://loremflickr.com/600/200/nature?lock=' + route.Route_custom_ID + ')', backgroundSize: 'cover' }"
+                  :style="{
+    backgroundImage: `url(${route.Photo1 || `https://loremflickr.com/600/200/nature?lock=${route.Route_custom_ID}`})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
+  }"
                 ></div>
 
                 <div class="info">
-                  <span
-                    >Время: {{ route.Route_Duration || route.Route_Days + ' дн.'
-                    }}</span
-                  >
+                  <span>Время: {{ route.duration }}</span>
                   <span
                     >Длина: {{ (route.Route_Length / 1000).toFixed(2) }}
                     км</span
@@ -714,6 +802,11 @@
             rejectRouteId: null,
             showRejectInfoModal: false,
             rejectInfoText: "",
+            adminPage: 1,
+            adminPerPage: 6,
+            adminGroups: [],
+            groupsPage: 1,
+            groupsPerPage: 6,
           };
         },
         methods: {
@@ -903,6 +996,7 @@
                 // Ожидаем структуру { site: [], proposed: [], custom: [] }
                 this.allSystemRoutes = await res.json();
               }
+              this.adminPage = 1;
             } catch (err) {
               console.error("Ошибка загрузки админки", err);
             }
@@ -1188,12 +1282,47 @@
             this.showRejectInfoModal = false;
             document.body.style.overflow = "auto";
           },
+          async loadAllGroupsForAdmin() {
+            try {
+              const res = await fetch("/api/admin/all-groups");
+              const data = await res.json();
+              this.adminGroups = data;
+              this.groupsPage = 1;
+            } catch (e) {
+              console.error("Ошибка загрузки групп", e);
+            }
+          },
+        },
+
+        computed: {
+          paginatedAdminRoutes() {
+            const start = (this.adminPage - 1) * this.adminPerPage;
+            const end = start + this.adminPerPage;
+            return this.allSystemRoutes.site.slice(start, end);
+          },
+          adminTotalPages() {
+            return Math.ceil(
+              this.allSystemRoutes.site.length / this.adminPerPage,
+            );
+          },
+          paginatedAdminGroups() {
+            const start = (this.groupsPage - 1) * this.groupsPerPage;
+            const end = start + this.groupsPerPage;
+            return this.adminGroups.slice(start, end);
+          },
+          groupsTotalPages() {
+            return Math.ceil(this.adminGroups.length / this.groupsPerPage);
+          },
         },
         watch: {
           activeMenu(newVal) {
             if (newVal === "Выйти из аккаунта") {
               this.confirmLogout();
               return;
+            }
+
+            if (newVal === "Группы" && this.user.role === "admin") {
+              this.loadAllGroupsForAdmin();
             }
 
             if (newVal === "Мои данные") {
@@ -1222,13 +1351,18 @@
                   this.menu = [
                     "Маршруты на сайте",
                     "Предложенные маршруты",
-                    "Пользовательские маршруты",
                     "Группы",
-                    "Мои данные",
                     "Выйти из аккаунта",
                   ];
                   this.activeMenu = "Маршруты на сайте"; // Ставим активной первую вкладку
                   this.loadAllSystemRoutes(); // Сразу грузим данные
+                } else if (this.user.role === "organizer") {
+                  // ГИД
+                  this.menu = [
+                    "Мои маршруты",
+                    "Мои данные",
+                    "Выйти из аккаунта",
+                  ];
                 } else {
                   // Обычное меню
                   this.menu = [

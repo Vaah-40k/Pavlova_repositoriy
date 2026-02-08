@@ -24,7 +24,7 @@ module.exports = function (sequelize) {
       Photo2: { type: DataTypes.STRING },
       Photo3: { type: DataTypes.STRING },
       Photo4: { type: DataTypes.STRING },
-      Route_Days: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 1 },
+      Route_Days: { type: DataTypes.TEXT },
     },
     {
       tableName: "routes",

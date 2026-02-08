@@ -446,6 +446,7 @@ app.post("/logout", (req, res) => {
   res.clearCookie("token");
   (res.status(200), json({ message: "Вы вышли из аккаунта" }));
 });
+
 // ПРОВЕРКА АВТОРИЗАЦИИ
 app.get("/api/auth-status", (req, res) => {
   const token = req.cookies.token;
@@ -469,15 +470,33 @@ app.get("/api/auth-status", (req, res) => {
 // ПРОВЕРКА НАЛИЧИЯ ГОТОВЫХ МАРШРУТОВ ИЗ БД
 app.get("/routes", async (req, res) => {
   try {
-    const routes = await Route.findAll();
+    const routes = await Route.findAll({
+      attributes: [
+        "Route_ID",
+        "Route_Name",
+        "Route_Description",
+        "Route_Length",
+        "Route_Duration",
+        "Photo1",
+        "Photo2",
+        "Photo3",
+        "Photo4",
+      ],
+      order: [["Route_ID", "DESC"]],
+    });
+
     const result = routes.map((route) => ({
       Route_ID: route.Route_ID,
       Route_Name: route.Route_Name,
       Route_Description: route.Route_Description,
       Route_Length: route.Route_Length,
       Route_Duration: route.Route_Duration,
-      Stop: route.Stop,
+      Photo1: route.Photo1 || null,
+      Photo2: route.Photo2 || null,
+      Photo3: route.Photo3 || null,
+      Photo4: route.Photo4 || null,
     }));
+
     res.json({ routes: result });
   } catch (err) {
     console.error(err);
@@ -543,6 +562,48 @@ app.get("/api/admin/all-routes", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+// ВЫВОД ВСЕХ ГРУПП АДМИНОМ
+app.get("/api/admin/all-groups", async (req, res) => {
+  try {
+    const routes = await Route.findAll({
+      include: [
+        {
+          model: Guide,
+          required: false,
+          attributes: ["First_Name", "Last_Name", "vk_link", "tg_link"],
+        },
+      ],
+      attributes: ["Route_ID", "Route_Name", "Photo1"],
+      order: [["Route_ID", "DESC"]],
+    });
+
+    const result = routes.map((r) => {
+      const guide = r.Guide;
+
+      return {
+        id: r.Route_ID,
+        route_name: r.Route_Name,
+
+        route_img: r.Photo1
+          ? r.Photo1
+          : `https://loremflickr.com/600/200/nature?lock=${r.Route_ID}`,
+
+        guide_name: guide
+          ? `${guide.First_Name} ${guide.Last_Name}`
+          : "Гид не назначен",
+
+        vk_link: guide?.vk_link || null,
+        tg_link: guide?.tg_link || null,
+      };
+    });
+
+    res.json(result);
+  } catch (e) {
+    console.error("ADMIN GROUPS ERROR:", e);
+    res.status(500).json({ error: "Ошибка загрузки групп" });
   }
 });
 
@@ -722,6 +783,7 @@ app.post("/api/admin/publish-route", async (req, res) => {
       .json({ message: "Ошибка сервера при публикации", error: error.message });
   }
 });
+// АДМИН ОТВЕРГАЕТ МАРШРУТ ГИДА
 app.post("/api/admin/reject-route", async (req, res) => {
   const { routeId, reason } = req.body;
 
@@ -928,26 +990,26 @@ app.get("/api/user-routes", async (req, res) => {
   try {
     const data = [];
 
-    // Standard маршруты (из Record) — только для участников
+    // Standard маршруты (из Record)
     if (role === "participant") {
       const records = await Record.findAll({ where: { Tourist_ID: userId } });
       for (const record of records) {
         const route = await Route.findByPk(record.Route_ID);
         if (route) {
-          // Проверяем существование
           data.push({
             bookingId: `standard_${record.Route_ID}`,
             title: route.Route_Name || "Неизвестно",
             date: record.Trip_Start_Date
               ? record.Trip_Start_Date.toISOString().split("T")[0]
               : null,
-            days: route.Route_Duration || "Не указано", // Время как строка 'HH:MM:SS' для formatDuration
+            duration: route.Route_Duration || "Не указано", // ← унифицировали
             distance: route.Route_Length
               ? (route.Route_Length / 1000).toFixed(2)
-              : "0", // В км
+              : "0",
             description: route.Route_Description || "",
             type: "standard",
             status: "public",
+            photo: route.Photo1 || null,
           });
         }
       }
@@ -955,26 +1017,39 @@ app.get("/api/user-routes", async (req, res) => {
 
     // Custom маршруты
     const whereCustom = {};
-    if (role === "participant") {
-      whereCustom.Tourist_ID = userId;
-    } else if (role === "organizer") {
-      whereCustom.Guide_ID = userId;
-    }
+    if (role === "participant") whereCustom.Tourist_ID = userId;
+    else if (role === "organizer") whereCustom.Guide_ID = userId;
+
     const customs = await Custum_Route.findAll({ where: whereCustom });
     for (const custom of customs) {
       const distKm = custom.Route_Length
         ? (custom.Route_Length / 1000).toFixed(2)
         : "0";
+
+      // Для кастомных используем Route_Duration, если есть, иначе Route_Days
+      let duration = custom.Route_Duration || "Не указано";
+      if (!custom.Route_Duration && custom.Route_Days) {
+        try {
+          const parsed = JSON.parse(custom.Route_Days);
+          duration = Array.isArray(parsed)
+            ? `${parsed.length} дней`
+            : custom.Route_Days;
+        } catch (e) {
+          duration = custom.Route_Days;
+        }
+      }
+
       data.push({
         bookingId: `custom_${custom.Route_custom_ID}`,
         title: custom.Route_Name || "Пользовательский маршрут",
-        date: null, // Можно добавить из Route_Schedule, если нужно
-        days: custom.Route_Days || 1, // Из нового поля (число дней)
+        date: null,
+        duration: duration, // ← унифицировали
         distance: distKm,
         description: custom.Route_Description || "",
         type: "custom",
-        status: custom.status || "private", // Здесь используется customRoute
+        status: custom.status || "private",
         rejection_reason: custom.rejection_reason,
+        photo: custom.Photo1 || null,
       });
     }
 
@@ -1293,6 +1368,9 @@ app.get("/api/user-groups", async (req, res) => {
             guide_name: `${guide.First_Name} ${guide.Last_Name}`,
             vk_link: guide.vk_link || "",
             tg_link: guide.tg_link || "",
+            route_img: route.Photo1
+              ? route.Photo1
+              : `https://loremflickr.com/600/200/nature?lock=${route.Route_ID}`,
           });
         }
       }

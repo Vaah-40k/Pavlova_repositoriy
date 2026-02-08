@@ -64,15 +64,27 @@
           <div class="images">
             <div
               class="img big"
-              :style="{ backgroundImage: 'url(https://loremflickr.com/400/300/winter,mountain?lock=' + route.Route_ID + ')' }"
+              :style="{
+      backgroundImage: `url(${route.Photo1 || `https://loremflickr.com/400/300/nature?lock=${route.Route_ID}`})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }"
             ></div>
             <div
               class="img small"
-              :style="{ backgroundImage: 'url(https://loremflickr.com/200/200/snow?lock=' + route.Route_ID + ')' }"
+              :style="{
+      backgroundImage: `url(${route.Photo2 || `https://loremflickr.com/200/200/nature?lock=${route.Route_ID + 1}`})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }"
             ></div>
             <div
               class="img small"
-              :style="{ backgroundImage: 'url(https://loremflickr.com/200/200/forest,winter?lock=' + route.Route_ID + ')' }"
+              :style="{
+      backgroundImage: `url(${route.Photo3 || `https://loremflickr.com/200/200/nature?lock=${route.Route_ID + 2}`})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }"
             ></div>
           </div>
 
@@ -182,7 +194,7 @@
           return {
             routes: [],
             search: "",
-            currentPage: 1, // Текущая активная страница
+            currentPage: 1,
             itemsPerPage: 3,
             showModal: false,
             selectedRoute: null,
@@ -205,15 +217,29 @@
           };
         },
         computed: {
-          // Список маршрутов только для текущей страницы
+          filteredRoutes() {
+            if (!this.search.trim()) return this.routes;
+
+            const term = this.search.toLowerCase().trim();
+
+            return this.routes.filter(
+              (route) =>
+                (route.Route_Name &&
+                  route.Route_Name.toLowerCase().includes(term)) ||
+                (route.Route_Description &&
+                  route.Route_Description.toLowerCase().includes(term)),
+            );
+          },
           paginatedRoutes() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
-            return this.routes.slice(start, end);
+            return this.filteredRoutes.slice(start, end);
           },
-          // Общее количество страниц
+
           totalPages() {
-            return Math.ceil(this.routes.length / this.itemsPerPage);
+            return (
+              Math.ceil(this.filteredRoutes.length / this.itemsPerPage) || 1
+            );
           },
         },
         methods: {
@@ -221,10 +247,8 @@
             if (!timeStr) return "";
             const parts = timeStr.split(":");
             if (parts.length < 2) return timeStr;
-
             const hours = parseInt(parts[0], 10);
             const minutes = parseInt(parts[1], 10);
-
             const decimal = hours + minutes / 60;
             return parseFloat(decimal.toFixed(1)) + " часов";
           },
@@ -283,8 +307,20 @@
             window.location.href = "/lk";
           },
         },
+        watch: {
+          // Сброс на первую страницу при новом поиске
+          search() {
+            this.currentPage = 1;
+          },
+        },
         mounted() {
           this.loadPage(1);
+          fetch("/routes")
+            .then((res) => res.json())
+            .then((data) => {
+              this.routes = data.routes || [];
+            })
+            .catch((err) => console.error("Ошибка загрузки маршрутов:", err));
           fetch("/api/auth-status")
             .then((r) => r.json())
             .then((d) => {
