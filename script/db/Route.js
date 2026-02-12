@@ -25,6 +25,10 @@ module.exports = function (sequelize) {
       Photo3: { type: DataTypes.STRING },
       Photo4: { type: DataTypes.STRING },
       Route_Days: { type: DataTypes.TEXT },
+      point_names: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       tableName: "routes",

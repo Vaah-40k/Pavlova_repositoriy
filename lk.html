@@ -124,6 +124,13 @@
                     На модерации
                   </span>
 
+                  <span
+                    v-if="route.status === 'published'"
+                    class="status-badge published"
+                  >
+                    Принят
+                  </span>
+
                   <button
                     v-else-if="route.status === 'rejected'"
                     class="open-btn"
@@ -141,70 +148,74 @@
               {{ user.role === 'admin' ? 'Все группы гидов' : 'Мои группы' }}
             </h2>
             <div v-if="user.role === 'admin'" class="routes">
-              <div
-                class="route-card"
-                v-for="group in paginatedAdminGroups"
-                :key="group.id"
-              >
-                <p class="title">{{ group.route_name }}</p>
-
-                <p style="font-size: 0.9em; color: #666; margin-bottom: 10px">
-                  Гид: {{ group.guide_name }}
-                </p>
-
+              <div class="routes">
+                <!-- Сохранить класс для стилей (3 в ряд) -->
                 <div
-                  class="map-placeholder"
-                  :style="{
-    backgroundImage: `url(${group.route_img || `https://loremflickr.com/600/200/nature?lock=${group.id}`})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center'
-  }"
-                ></div>
+                  class="route-card"
+                  v-for="guide in paginatedAdminGuides"
+                  :key="guide.id"
+                >
+                  <p class="title">{{ guide.id }}</p>
+                  <!-- ID_гида сверху -->
 
-                <!-- ТОТ ЖЕ БЛОК, ЧТО У ПУТЕШЕСТВЕННИКА -->
-                <div class="route-actions" style="margin-top: 15px">
-                  <div>
-                    <a
-                      v-if="group.vk_link"
-                      :href="group.vk_link"
-                      target="_blank"
-                      class="social-btn vk"
-                    >
-                      <img
-                        src="icon/vk.png"
-                        style="width: 100%; height: 100%"
-                      />
-                    </a>
-                    <span v-else class="no-link">Нет VK</span>
-                  </div>
+                  <p style="font-size: 0.9em; color: #666; margin-bottom: 10px">
+                    Гид: {{ guide.name }}
+                  </p>
 
-                  <div>
-                    <a
-                      v-if="group.tg_link"
-                      :href="group.tg_link"
-                      target="_blank"
-                      class="social-btn tg"
-                    >
-                      <img
-                        src="icon/telegram.png"
-                        style="width: 100%; height: 100%"
-                      />
-                    </a>
-                    <span v-else class="no-link">Нет TG</span>
+                  <div
+                    class="map-placeholder"
+                    :style="{
+      backgroundImage: `url(${guide.photo || `https://loremflickr.com/600/200/nature?lock=${guide.id}`})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }"
+                  ></div>
+                  <!-- Фото с маршрута (Photo1 или плейсхолдер) -->
+
+                  <!-- Две кнопки-ссылки (как у путешественников) -->
+                  <div class="route-actions" style="margin-top: 15px">
+                    <div>
+                      <a
+                        v-if="guide.vk_link"
+                        :href="guide.vk_link"
+                        target="_blank"
+                        class="social-btn vk"
+                      >
+                        <img
+                          src="icon/vk.png"
+                          style="width: 100%; height: 100%"
+                        />
+                      </a>
+                      <span v-else class="no-link">Нет VK</span>
+                    </div>
+                    <div>
+                      <a
+                        v-if="guide.tg_link"
+                        :href="guide.tg_link"
+                        target="_blank"
+                        class="social-btn tg"
+                      >
+                        <img
+                          src="icon/telegram.png"
+                          style="width: 100%; height: 100%"
+                        />
+                      </a>
+                      <span v-else class="no-link">Нет TG</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- пагинация -->
-              <div class="pagination" v-if="groupsTotalPages > 1">
-                <button
-                  v-for="page in groupsTotalPages"
-                  :key="page"
-                  :class="{ active: groupsPage === page }"
-                  @click="groupsPage = page"
-                >
-                  {{ page }}
-                </button>
+                <!-- Пагинация (если нужно) -->
+                <div class="pagination" v-if="guidesTotalPages > 1">
+                  <button
+                    v-for="page in guidesTotalPages"
+                    :key="page"
+                    :class="{ active: guidesPage === page }"
+                    @click="guidesPage = page"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -807,6 +818,9 @@
             adminGroups: [],
             groupsPage: 1,
             groupsPerPage: 6,
+            adminGuides: [],
+            guidesPage: 1,
+            guidesPerPage: 6,
           };
         },
         methods: {
@@ -1036,9 +1050,9 @@
 
               if (!confirm("Отправить маршрут на публикацию?")) return;
 
-              const id = route.bookingId.toString().replace("custom_", "");
+              const id1 = route.bookingId.toString().replace("custom_", "");
 
-              fetch(`/api/custom-routes/publish/${id}`, {
+              fetch(`/api/custom-routes/publish/${id1}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
               })
@@ -1052,6 +1066,30 @@
                   }
                 })
                 .catch((err) => console.error("Ошибка запроса:", err));
+
+              const [type, id] = route.bookingId.split("_");
+              if (type !== "custom") return alert("Неверный тип маршрута");
+
+              if (!confirm("Опубликовать маршрут на модерацию?")) return;
+
+              fetch("/api/publish-route", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id }),
+              })
+                .then((res) => res.json())
+                .then((data) => {
+                  if (data.status === "ok") {
+                    route.status = "pending";
+                    alert("Маршрут отправлен на модерацию!");
+                  } else {
+                    alert("Ошибка: " + (data.error || "Неизвестная ошибка"));
+                  }
+                })
+                .catch((err) => {
+                  console.error(err);
+                  alert("Ошибка сети");
+                });
 
               return;
             }
@@ -1292,9 +1330,29 @@
               console.error("Ошибка загрузки групп", e);
             }
           },
+          async loadAllGuidesForAdmin() {
+            try {
+              const res = await fetch("/api/admin/all-guides"); // Новый endpoint
+              const data = await res.json();
+              this.adminGuides = data; // Переименовать adminGroups -> adminGuides
+              this.guidesPage = 1; // Переименовать groupsPage -> guidesPage
+            } catch (e) {
+              console.error("Ошибка загрузки гидов", e);
+            }
+          },
         },
 
         computed: {
+          paginatedAdminGuides() {
+            // Переименовать paginatedAdminGroups -> paginatedAdminGuides
+            const start = (this.guidesPage - 1) * this.guidesPerPage; // guidesPage, guidesPerPage (добавь data: guidesPerPage: 9 для 3x3)
+            const end = start + this.guidesPerPage;
+            return this.adminGuides.slice(start, end); // adminGuides
+          },
+          guidesTotalPages() {
+            // Переименовать groupsTotalPages
+            return Math.ceil(this.adminGuides.length / this.guidesPerPage);
+          },
           paginatedAdminRoutes() {
             const start = (this.adminPage - 1) * this.adminPerPage;
             const end = start + this.adminPerPage;
@@ -1335,6 +1393,9 @@
               newVal === "Предложенные маршруты"
             ) {
               this.loadAllSystemRoutes();
+            }
+            if (newVal === "Группы" && this.user.role === "admin") {
+              this.loadAllGuidesForAdmin(); // Изменить вызов
             }
           },
         },

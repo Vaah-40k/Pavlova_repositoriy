@@ -135,6 +135,10 @@ module.exports = function (sequelize) {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      point_names: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       timestamps: false,

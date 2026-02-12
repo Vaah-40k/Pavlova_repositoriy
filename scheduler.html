@@ -389,6 +389,7 @@
         let routeData = null; // Данные от сервера (дистанция, сегменты)
         let routeName = "Название маршрута";
         let dashedLayers = []; // Пунктирные линии
+        let routeStatus = "private"; // по умолчанию
 
         // Элементы UI
         const container = document.querySelector(".container");
@@ -1071,14 +1072,34 @@
             "#tab-content-equipment .days-list .day-item",
           );
 
-          const realequipment = Array.from(equipmentItems).filter(
-            (item) =>
-              !item.textContent.includes("пуст") &&
-              item.textContent.trim() !== "",
-          );
+          let equipmentValid = true;
+          let hasEquipment = false;
 
-          if (realequipment.length === 0) {
+          equipmentItems.forEach((item) => {
+            if (item.textContent.includes("Список снаряжения пуст")) return;
+
+            const span = item.querySelector("span");
+            if (!span) return;
+
+            const name = span.textContent.trim();
+
+            hasEquipment = true;
+
+            if (!name || name === "Новая вещь") {
+              equipmentValid = false;
+            }
+          });
+
+          if (!hasEquipment) {
             alert("Добавьте хотя бы одно снаряжение");
+            document.querySelectorAll(".nav-tab")[4].click();
+            return;
+          }
+
+          if (!equipmentValid) {
+            alert(
+              "Назовите как-нибудь снаряжение, оно не может называться «Новая вещь»",
+            );
             document.querySelectorAll(".nav-tab")[4].click();
             return;
           }
@@ -1095,6 +1116,9 @@
 
         // Кнопка финального сохранения
         finalSaveBtn.onclick = async () => {
+          const params = new URLSearchParams(window.location.search);
+          const routeId = params.get("id");
+
           const costVal = costInput.value.replace(/\D/g, ""); // Только цифры
           const orgCost = parseInt(costVal) || 0;
 
@@ -1254,17 +1278,17 @@
           const equipmentList = [];
 
           items.forEach((item) => {
-            // Пропускаем заглушку
             if (item.textContent.includes("Список снаряжения пуст")) return;
 
-            // Берём ТОЛЬКО текст из span (без кнопки ×)
             const span = item.querySelector("span");
             if (!span) return;
 
             const name = span.textContent.trim();
 
-            if (name && name !== "Новая вещь") {
-              equipmentList.push(name);
+            if (name) {
+              equipmentList.push({
+                name: name,
+              });
             }
           });
 
@@ -1319,6 +1343,9 @@
             // 1. Имя
             routeName = data.name;
             modalTitle.textContent = routeName;
+            if (routeStatus !== "private") {
+              lockRouteEditing();
+            }
             document.getElementById("route-desc-area").value =
               data.description || "";
 
@@ -2023,6 +2050,44 @@
           }
         }
       })();
+
+      function lockRouteEditing() {
+        console.log("Редактирование заблокировано, статус:", routeStatus);
+
+        // Блокируем все input, textarea, select, button
+        document
+          .querySelectorAll("input, textarea, select, button")
+          .forEach((el) => {
+            if (!el.closest("#org-cost-modal")) {
+              el.disabled = true;
+            }
+          });
+
+        // Убираем возможность кликов по карте (добавляем блокировку добавления маркеров и т.д.)
+        map.off("click");
+
+        // Перехватываем кнопку сохранить
+        const saveBtn = document.querySelector(".action-btn.primary");
+        saveBtn.disabled = false; // Чтобы клик отработал
+        saveBtn.onclick = function () {
+          // Здесь ваше "Сообщение 1" — можно унифицировать или оставить вариации
+          if (routeStatus === "pending") {
+            alert(
+              "Сообщение 1: Ваш маршрут на модерации, его нельзя изменять. Подождите ответ от модерации.",
+            );
+          } else if (routeStatus === "rejected") {
+            alert(
+              "Сообщение 1: Ваш маршрут отклонён. Если вы хотите опубликовать, создайте новый маршрут и отправьте на модерацию.",
+            );
+          } else if (routeStatus === "published") {
+            alert("Сообщение 1: Маршрут опубликован и не может быть изменён.");
+          } else {
+            alert(
+              "Сообщение 1: Редактирование маршрута запрещено из-за его статуса.",
+            );
+          }
+        };
+      }
     </script>
 
     <div
