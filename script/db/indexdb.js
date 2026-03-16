@@ -1,7 +1,7 @@
 const Sequelize = require("sequelize");
-const sequelize = new Sequelize("travel_site_oktagon", "root", "", {
+const sequelize = new Sequelize("travel_site_oktagon", "nodeuser", "StrongPassword123", {
   dialect: "mysql",
-  host: "localhost",
+  host: "127.0.0.1",
   logging: false,
 });
 
