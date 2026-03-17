@@ -1104,17 +1104,6 @@
             return;
           }
 
-          const modalTitleEl = document.querySelector("#org-cost-modal h3");
-          if (userRole === "organizer") {
-            modalTitleEl.textContent =
-              "Сколько составит ваш организационный взнос?";
-          } else if (userRole === "participant") {
-            modalTitleEl.textContent = "Сколько возмёте денег с собой?";
-          } else {
-            modalTitleEl.textContent =
-              "Сколько составит ваш организационный взнос?";
-          }
-
           // === ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ ===
           costModal.style.display = "flex";
           costInput.focus();
@@ -1204,8 +1193,7 @@
               const textInput = rec.querySelector(
                 'input[data-field-type="text"]',
               );
-              const timeInput =
-                rparticipantec.querySelector('input[type="time"]');
+              const timeInput = rec.querySelector('input[type="time"]');
               const switchBtn = rec.querySelector(".record-switch");
 
               // Определяем режим (Текст или Точка)

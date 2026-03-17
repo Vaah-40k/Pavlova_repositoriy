@@ -1060,7 +1060,6 @@
                 .then((data) => {
                   if (data.success) {
                     route.status = "pending";
-                    alert("Маршрут отправлен на модерацию");
                   } else {
                     alert("Ошибка: " + (data.error || "неизвестно"));
                   }
@@ -1069,8 +1068,6 @@
 
               const [type, id] = route.bookingId.split("_");
               if (type !== "custom") return alert("Неверный тип маршрута");
-
-              if (!confirm("Опубликовать маршрут на модерацию?")) return;
 
               fetch("/api/publish-route", {
                 method: "POST",
