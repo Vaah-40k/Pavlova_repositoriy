@@ -11,6 +11,8 @@ const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const multer = require("multer");
 const fs = require("fs");
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 const db = require("./db/indexdb");
 const Turist = db.Turist;
@@ -136,6 +138,33 @@ const storageRoutes = multer.diskStorage({
 // 4. Инициализация middleware
 const uploadLicense = multer({ storage: storageLicenses });
 const uploadRoute = multer({ storage: storageRoutes });
+
+// Отправка писем на почту
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+async function sendVerificationEmail(email, token, role) {
+  const link = `${process.env.BASE_URL}/verify-email?token=${token}`;
+  const mailOptions = {
+    from: process.env.FROM_EMAIL,
+    to: email,
+    subject: "Подтверждение email для TrekPlan",
+    html: `
+      <h2>Добро пожаловать в TrekPlan!</h2>
+      <p>Для завершения регистрации, пожалуйста, подтвердите ваш email, перейдя по ссылке:</p>
+      <a href="${link}">${link}</a>
+      <p>Если вы не регистрировались, просто проигнорируйте это письмо.</p>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+}
 
 const Working_Site = () => {
   app.get("", (req, res) => {
@@ -334,92 +363,67 @@ const Working_Site = () => {
 
 // РЕГИСТРАЦИЯ
 app.post("/registration", async (req, res) => {
-  let Finel_hash_Password = null;
-  async function hashPassword(password) {
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    return hashedPassword;
-  }
-  Finel_hash_Password = (await hashPassword(req.body["password"])).toString();
-
   try {
-    const existingUser =
-      (await Turist.findOne({
-        where: { email: req.body["email"] },
-      })) ||
-      (await Guide.findOne({
-        where: { email: req.body["email"] },
-      }));
+    const { firstName, lastName, email, password, role, experience } = req.body;
 
-    if (existingUser) {
+    // Проверка существующего пользователя
+    let existingUser = await Turist.findOne({ where: { email } });
+    if (!existingUser) {
+      existingUser = await Guide.findOne({ where: { email } });
+    }
+
+    // Если пользователь с таким email уже есть и подтверждён
+    if (existingUser && existingUser.email_verified) {
       return res.status(400).json({
         status: "error",
         message: "Пользователь с такой почтой уже существует",
       });
     }
 
-    let userId, userRole;
-    if (req.body["role"] === "participant") {
-      const Tourist = await Turist.create({
-        password: Finel_hash_Password,
-        First_Name: req.body["firstName"],
-        Last_Name: req.body["lastName"],
-        email: req.body["email"],
-        role: req.body["role"],
-        experience: req.body["experience"],
+    // Хеширование пароля
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    // Если пользователь существует, но не подтверждён — обновляем данные
+    if (existingUser && !existingUser.email_verified) {
+      await existingUser.update({
+        password: hashedPassword,
+        First_Name: firstName,
+        Last_Name: lastName,
+        experience: experience || existingUser.experience,
+        email_verification_token: verificationToken,
       });
-      console.log("Новый турист был добавлен в таблицу");
-      userId = Tourist.Tourist_ID;
-      userRole = "participant";
-      const fullName = `${Tourist.First_Name} ${Tourist.Last_Name}`;
-      const initial = Tourist.First_Name[0].toUpperCase();
 
-      const token = jwt.sign(
-        {
-          id: userId,
-          role: userRole,
-          name: fullName,
-          initial: initial,
-        },
-        SECRET_KEY,
-        { expiresIn: "3d" },
-      );
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        maxAge: 3 * 24 * 60 * 60 * 1000,
-        sameSite: "strict",
+      await sendVerificationEmail(email, verificationToken, role);
+      return res.json({
+        status: "ok",
+        message: "Данные обновлены. Проверьте почту для подтверждения.",
       });
-    } else if (req.body["role"] === "organizer") {
-      const Gide = await Guide.create({
-        password: Finel_hash_Password,
-        First_Name: req.body["firstName"],
-        Last_Name: req.body["lastName"],
-        email: req.body["email"],
-        role: req.body["role"],
-        experience: req.body["experience"],
+    }
+
+    // Создание нового пользователя
+    let newUser;
+    if (role === "participant") {
+      newUser = await Turist.create({
+        password: hashedPassword,
+        First_Name: firstName,
+        Last_Name: lastName,
+        email,
+        role,
+        experience,
+        email_verified: false,
+        email_verification_token: verificationToken,
       });
-      console.log("Новый гид был добавлен в таблицу");
-      userId = Gide.Guide_ID;
-      userRole = "organizer";
-
-      const fullName = `${Gide.First_Name} ${Gide.Last_Name}`;
-      const initial = Gide.First_Name[0].toUpperCase();
-      const token = jwt.sign(
-        {
-          id: Gide.Guide_ID,
-          role: "organizer",
-          name: fullName,
-          initial: initial,
-        },
-        SECRET_KEY,
-        { expiresIn: "3d" },
-      );
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        maxAge: 3 * 24 * 60 * 60 * 1000,
-        sameSite: "strict",
+    } else if (role === "organizer") {
+      newUser = await Guide.create({
+        password: hashedPassword,
+        First_Name: firstName,
+        Last_Name: lastName,
+        email,
+        role,
+        experience,
+        email_verified: false,
+        email_verification_token: verificationToken,
       });
     } else {
       return res
@@ -427,14 +431,54 @@ app.post("/registration", async (req, res) => {
         .json({ status: "error", message: "Неверная роль" });
     }
 
-    res.status(200).json({ status: "ok", role: userRole });
+    await sendVerificationEmail(email, verificationToken, role);
+
+    res.status(200).json({
+      status: "ok",
+      message: "Регистрация успешна. Проверьте почту для подтверждения.",
+    });
   } catch (err) {
-    console.log("Произошла ошибка");
-    console.log(err);
-    res.status(500).json({ status: "err" });
+    console.error("Ошибка регистрации:", err);
+    res.status(500).json({ status: "error", message: "Ошибка сервера" });
   }
 });
+// ПОДТВЕРЖДЕНИЕ ПОЧТЫ
+app.get("/verify-email", async (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    return res.status(400).send("Токен не указан");
+  }
 
+  try {
+    // Ищем пользователя по токену в обеих таблицах
+    let user = await Turist.findOne({
+      where: { email_verification_token: token },
+    });
+    let role = "participant";
+    if (!user) {
+      user = await Guide.findOne({
+        where: { email_verification_token: token },
+      });
+      role = "organizer";
+    }
+
+    if (!user) {
+      return res.status(400).send("Недействительный или устаревший токен");
+    }
+
+    // Подтверждаем email
+    await user.update({
+      email_verified: true,
+      email_verification_token: null,
+    });
+
+    // Перенаправляем на страницу входа с сообщением
+    res.redirect("/autorization?verified=1");
+  } catch (err) {
+    console.error("Ошибка подтверждения email:", err);
+    res.status(500).send("Ошибка сервера");
+  }
+});
 // АВТОРИЗАЦИЯ
 app.post("/autorization", async (req, res) => {
   try {
@@ -1045,13 +1089,48 @@ app.put(
       if (!user)
         return res.status(404).json({ message: "Пользователь не найден" });
 
-      // 1. Обновление текстовых полей
+      // --- Проверка смены email ---
+      const oldEmail = user.email;
+      const newEmail = req.body.email;
+      let emailChanged = false;
+      let verificationToken = null;
+
+      if (newEmail && newEmail !== oldEmail) {
+        // Проверка уникальности нового email (не занят ли другим пользователем)
+        let existingOther = await Turist.findOne({
+          where: { email: newEmail },
+        });
+        if (!existingOther)
+          existingOther = await Guide.findOne({ where: { email: newEmail } });
+        if (existingOther) {
+          // Проверяем, не текущий ли это пользователь
+          let isCurrent = false;
+          if (role === "participant" && existingOther.Tourist_ID === userId)
+            isCurrent = true;
+          if (role === "organizer" && existingOther.Guide_ID === userId)
+            isCurrent = true;
+          if (!isCurrent) {
+            return res
+              .status(400)
+              .json({
+                message: "Этот email уже используется другим пользователем",
+              });
+          }
+        }
+
+        emailChanged = true;
+        verificationToken = crypto.randomBytes(32).toString("hex");
+        user.email = newEmail;
+        user.email_verified = false;
+        user.email_verification_token = verificationToken;
+      }
+
+      // --- Обновление остальных полей ---
       user.First_Name = req.body.First_Name;
       user.Last_Name = req.body.Last_Name;
       user.phone = req.body.phone;
       user.experience = req.body.experience;
 
-      // Обработка возраста
       if (req.body.age) {
         if (role === "organizer") user.Age = req.body.age;
         else user.age = req.body.age;
@@ -1062,12 +1141,11 @@ app.put(
       }
 
       if (role === "organizer") {
-        // ИСПРАВЛЕНО: Записываем пришедшие с фронта данные в правильные колонки БД
         user.vk_link = req.body.link_vk_group;
         user.tg_link = req.body.link_tg_group;
       }
 
-      // 2. Обработка файла лицензии
+      // --- Обработка файла лицензии (для организатора) ---
       if (role === "organizer" && req.file) {
         if (user.Guide_License) {
           const oldPath = path.join(
@@ -1076,43 +1154,53 @@ app.put(
           );
           fs.unlink(oldPath, () => {});
         }
-
         const relativePath = req.file.path
           .replace(__dirnames, "")
           .replace(/\\/g, "/")
           .replace(/^\/*/, "/");
-
         user.Guide_License = relativePath;
       }
 
       await user.save();
 
-      // Генерация нового токена
-      const fullName = `${user.First_Name} ${user.Last_Name}`;
-      const initial = user.First_Name[0].toUpperCase();
+      // --- Ответ в зависимости от того, был ли изменён email ---
+      if (emailChanged) {
+        // Отправляем письмо с подтверждением на новый адрес
+        await sendVerificationEmail(newEmail, verificationToken, role);
+        // Очищаем куку (выход из аккаунта)
+        res.clearCookie("token");
+        return res.json({
+          status: "email_changed",
+          message:
+            "Email изменён. Подтвердите новый адрес, перейдя по ссылке в письме.",
+        });
+      } else {
+        // Генерируем новый токен (данные пользователя могли измениться)
+        const fullName = `${user.First_Name} ${user.Last_Name}`;
+        const initial = user.First_Name[0].toUpperCase();
+        const newToken = jwt.sign(
+          {
+            id: userId,
+            role: role,
+            name: fullName,
+            initial: initial,
+          },
+          SECRET_KEY,
+          { expiresIn: "3d" },
+        );
 
-      const newToken = jwt.sign(
-        {
-          id: userId,
-          role: role,
-          name: fullName,
-          initial: initial,
-        },
-        SECRET_KEY,
-        { expiresIn: "3d" },
-      );
+        res.cookie("token", newToken, {
+          httpOnly: true,
+          maxAge: 3 * 24 * 60 * 60 * 1000,
+          sameSite: "strict",
+        });
 
-      res.cookie("token", newToken, {
-        httpOnly: true,
-        maxAge: 3 * 24 * 60 * 60 * 1000,
-        sameSite: "strict",
-      });
-
-      res.json({
-        status: "ok",
-        user: { name: fullName, initial: initial },
-        newLicenseUrl: user.Guide_License,
-      });
+        res.json({
+          status: "ok",
+          user: { name: fullName, initial: initial },
+          newLicenseUrl: user.Guide_License,
+        });
+      }
     } catch (err) {
       console.error("Ошибка при обновлении:", err);
       res.status(500).json({ message: "Ошибка при обновлении профиля" });
