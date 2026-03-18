@@ -166,6 +166,85 @@ async function sendVerificationEmail(email, token, role) {
   await transporter.sendMail(mailOptions);
 }
 
+async function ensureUser(req, res, next) {
+  let token = req.cookies.token;
+  let decoded = null;
+
+  // Пробуем проверить существующий токен
+  if (token) {
+    try {
+      decoded = jwt.verify(token, SECRET_KEY);
+      req.user = {
+        id: decoded.id,
+        role: decoded.role,
+        name: decoded.name,
+        initial: decoded.initial,
+      };
+      return next();
+    } catch (err) {
+      // Токен недействителен — игнорируем, создадим гостя
+      console.warn("Недействительный токен, создаём гостя");
+    }
+  }
+
+  // Создаём гостя
+  try {
+    const newGuest = await Turist.create({
+      role: "participant", // все остальные поля будут NULL
+    });
+
+    const guestToken = jwt.sign(
+      {
+        id: newGuest.Tourist_ID,
+        role: "participant",
+        name: "Гость",
+        initial: "Г",
+      },
+      SECRET_KEY,
+      { expiresIn: "3d" },
+    );
+
+    res.cookie("token", guestToken, {
+      httpOnly: true,
+      maxAge: 3 * 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
+
+    req.user = {
+      id: newGuest.Tourist_ID,
+      role: "participant",
+      name: "Гость",
+      initial: "Г",
+    };
+
+    console.log(`Middleware: создан гость с ID ${req.user.id}`);
+    next();
+  } catch (err) {
+    console.error("Ошибка создания гостя в middleware:", err);
+    res.status(500).json({ error: "Не удалось создать пользователя" });
+  }
+}
+
+async function isEmailTaken(email, excludeUserId, excludeRole) {
+  // Поиск в таблице tourist
+  let tourist = await Turist.findOne({ where: { email } });
+  if (
+    tourist &&
+    (excludeRole !== "participant" || tourist.Tourist_ID !== excludeUserId)
+  ) {
+    return true;
+  }
+  // Поиск в таблице guides
+  let guide = await Guide.findOne({ where: { email } });
+  if (
+    guide &&
+    (excludeRole !== "organizer" || guide.Guide_ID !== excludeUserId)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 const Working_Site = () => {
   app.get("", (req, res) => {
     res.sendFile(__dirnames + "index.html");
@@ -177,7 +256,7 @@ const Working_Site = () => {
   app.get("/scheduler", (req, res) => {
     res.sendFile(__dirnames + "scheduler.html");
   });
-  app.get("/lk", (req, res) => {
+  app.get("/lk", ensureUser, (req, res) => {
     res.sendFile(__dirnames + "lk.html");
   });
   app.get("/registration", (req, res) => {
@@ -392,6 +471,7 @@ app.post("/registration", async (req, res) => {
         Last_Name: lastName,
         experience: experience || existingUser.experience,
         email_verification_token: verificationToken,
+        email_token_expires: expires,
       });
 
       await sendVerificationEmail(email, verificationToken, role);
@@ -403,6 +483,8 @@ app.post("/registration", async (req, res) => {
 
     // Создание нового пользователя
     let newUser;
+    const expires = new Date(Date.now() + 5 * 1000); // +10 минут
+
     if (role === "participant") {
       newUser = await Turist.create({
         password: hashedPassword,
@@ -413,6 +495,7 @@ app.post("/registration", async (req, res) => {
         experience,
         email_verified: false,
         email_verification_token: verificationToken,
+        email_token_expires: expires,
       });
     } else if (role === "organizer") {
       newUser = await Guide.create({
@@ -424,6 +507,7 @@ app.post("/registration", async (req, res) => {
         experience,
         email_verified: false,
         email_verification_token: verificationToken,
+        email_token_expires: expires,
       });
     } else {
       return res
@@ -445,12 +529,9 @@ app.post("/registration", async (req, res) => {
 // ПОДТВЕРЖДЕНИЕ ПОЧТЫ
 app.get("/verify-email", async (req, res) => {
   const { token } = req.query;
-  if (!token) {
-    return res.status(400).send("Токен не указан");
-  }
+  if (!token) return res.status(400).send("Токен не указан");
 
   try {
-    // Ищем пользователя по токену в обеих таблицах
     let user = await Turist.findOne({
       where: { email_verification_token: token },
     });
@@ -462,18 +543,41 @@ app.get("/verify-email", async (req, res) => {
       role = "organizer";
     }
 
-    if (!user) {
+    if (!user)
       return res.status(400).send("Недействительный или устаревший токен");
+
+    // Проверка срока действия
+    if (user.email_token_expires && new Date() > user.email_token_expires) {
+      // Токен истёк – очищаем запрос на смену email (если был)
+      if (user.new_email) {
+        user.new_email = null;
+        user.email_verification_token = null;
+        user.email_token_expires = null;
+        await user.save();
+      }
+      return res
+        .status(400)
+        .send("Срок действия ссылки истёк. Запросите повторную отправку.");
     }
 
-    // Подтверждаем email
-    await user.update({
-      email_verified: true,
-      email_verification_token: null,
-    });
+    if (user.new_email) {
+      // Смена email
+      user.email = user.new_email;
+      user.new_email = null;
+      user.email_verified = true;
+      user.email_verification_token = null;
+      user.email_token_expires = null;
+      await user.save();
+    } else {
+      // Первичная регистрация
+      user.email_verified = true;
+      user.email_verification_token = null;
+      user.email_token_expires = null;
+      await user.save();
+    }
 
-    // Перенаправляем на страницу входа с сообщением
-    res.redirect("/autorization?verified=1");
+    // Редирект на личный кабинет с параметром verified=1
+    res.redirect("/lk?verified=1");
   } catch (err) {
     console.error("Ошибка подтверждения email:", err);
     res.status(500).send("Ошибка сервера");
@@ -1048,6 +1152,7 @@ app.get("/api/get-user-profile", async (req, res) => {
       First_Name: user.First_Name,
       Last_Name: user.Last_Name,
       email: user.email,
+      new_email: user.new_email,
       phone: user.phone || "",
       age: (role === "participant" ? user.age : user.Age) || 0,
       experience: user.experience || "",
@@ -1089,47 +1194,32 @@ app.put(
       if (!user)
         return res.status(404).json({ message: "Пользователь не найден" });
 
-      // --- Проверка смены email ---
       const oldEmail = user.email;
       const newEmail = req.body.email;
       let emailChanged = false;
       let verificationToken = null;
 
+      // Проверка смены email
       if (newEmail && newEmail !== oldEmail) {
-        // Проверка уникальности нового email (не занят ли другим пользователем)
-        let existingOther = await Turist.findOne({
-          where: { email: newEmail },
-        });
-        if (!existingOther)
-          existingOther = await Guide.findOne({ where: { email: newEmail } });
-        if (existingOther) {
-          // Проверяем, не текущий ли это пользователь
-          let isCurrent = false;
-          if (role === "participant" && existingOther.Tourist_ID === userId)
-            isCurrent = true;
-          if (role === "organizer" && existingOther.Guide_ID === userId)
-            isCurrent = true;
-          if (!isCurrent) {
-            return res
-              .status(400)
-              .json({
-                message: "Этот email уже используется другим пользователем",
-              });
-          }
+        const emailTaken = await isEmailTaken(newEmail, userId, role);
+        if (emailTaken) {
+          return res.status(400).json({
+            message: "Этот email уже используется другим пользователем",
+          });
         }
 
         emailChanged = true;
         verificationToken = crypto.randomBytes(32).toString("hex");
-        user.email = newEmail;
-        user.email_verified = false;
+        user.new_email = newEmail;
         user.email_verification_token = verificationToken;
+        // email_verified не меняем
       }
 
-      // --- Обновление остальных полей ---
-      user.First_Name = req.body.First_Name;
-      user.Last_Name = req.body.Last_Name;
-      user.phone = req.body.phone;
-      user.experience = req.body.experience;
+      // Обновление остальных полей
+      user.First_Name = req.body.First_Name || user.First_Name;
+      user.Last_Name = req.body.Last_Name || user.Last_Name;
+      user.phone = req.body.phone || user.phone;
+      user.experience = req.body.experience || user.experience;
 
       if (req.body.age) {
         if (role === "organizer") user.Age = req.body.age;
@@ -1137,15 +1227,15 @@ app.put(
       }
 
       if (role === "participant") {
-        user.gender = req.body.gender;
+        user.gender = req.body.gender || user.gender;
       }
 
       if (role === "organizer") {
-        user.vk_link = req.body.link_vk_group;
-        user.tg_link = req.body.link_tg_group;
+        user.vk_link = req.body.link_vk_group || user.vk_link;
+        user.tg_link = req.body.link_tg_group || user.tg_link;
       }
 
-      // --- Обработка файла лицензии (для организатора) ---
+      // Обработка файла лицензии
       if (role === "organizer" && req.file) {
         if (user.Guide_License) {
           const oldPath = path.join(
@@ -1163,41 +1253,55 @@ app.put(
 
       await user.save();
 
-      // --- Ответ в зависимости от того, был ли изменён email ---
+      // Если email изменён, отправляем письмо
       if (emailChanged) {
-        // Отправляем письмо с подтверждением на новый адрес
+        const expires = new Date(Date.now() + 10 * 60 * 1000);
+        user.new_email = newEmail;
+        user.email_verification_token = verificationToken;
+        user.email_token_expires = expires;
+
         await sendVerificationEmail(newEmail, verificationToken, role);
-        // Очищаем куку (выход из аккаунта)
-        res.clearCookie("token");
-        return res.json({
-          status: "email_changed",
-          message:
-            "Email изменён. Подтвердите новый адрес, перейдя по ссылке в письме.",
-        });
-      } else {
-        // Генерируем новый токен (данные пользователя могли измениться)
+        // Генерируем новый токен сессии (имя/фамилия могли измениться)
         const fullName = `${user.First_Name} ${user.Last_Name}`;
-        const initial = user.First_Name[0].toUpperCase();
+        const initial = user.First_Name
+          ? user.First_Name[0].toUpperCase()
+          : "?";
         const newToken = jwt.sign(
-          {
-            id: userId,
-            role: role,
-            name: fullName,
-            initial: initial,
-          },
+          { id: userId, role, name: fullName, initial },
           SECRET_KEY,
           { expiresIn: "3d" },
         );
-
         res.cookie("token", newToken, {
           httpOnly: true,
           maxAge: 3 * 24 * 60 * 60 * 1000,
           sameSite: "strict",
         });
-
+        return res.json({
+          status: "email_pending",
+          message:
+            "На новый адрес отправлено письмо с подтверждением. После подтверждения email будет изменён.",
+          user: { name: fullName, initial },
+          newLicenseUrl: user.Guide_License,
+        });
+      } else {
+        // Без смены email – просто обновляем токен
+        const fullName = `${user.First_Name} ${user.Last_Name}`;
+        const initial = user.First_Name
+          ? user.First_Name[0].toUpperCase()
+          : "?";
+        const newToken = jwt.sign(
+          { id: userId, role, name: fullName, initial },
+          SECRET_KEY,
+          { expiresIn: "3d" },
+        );
+        res.cookie("token", newToken, {
+          httpOnly: true,
+          maxAge: 3 * 24 * 60 * 60 * 1000,
+          sameSite: "strict",
+        });
         res.json({
           status: "ok",
-          user: { name: fullName, initial: initial },
+          user: { name: fullName, initial },
           newLicenseUrl: user.Guide_License,
         });
       }
@@ -1317,65 +1421,6 @@ app.post("/api/publish-route", async (req, res) => {
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
-
-async function ensureUser(req, res, next) {
-  let token = req.cookies.token;
-  let decoded = null;
-
-  // Пробуем проверить существующий токен
-  if (token) {
-    try {
-      decoded = jwt.verify(token, SECRET_KEY);
-      req.user = {
-        id: decoded.id,
-        role: decoded.role,
-        name: decoded.name,
-        initial: decoded.initial,
-      };
-      return next();
-    } catch (err) {
-      // Токен недействителен — игнорируем, создадим гостя
-      console.warn("Недействительный токен, создаём гостя");
-    }
-  }
-
-  // Создаём гостя
-  try {
-    const newGuest = await Turist.create({
-      role: "participant", // все остальные поля будут NULL
-    });
-
-    const guestToken = jwt.sign(
-      {
-        id: newGuest.Tourist_ID,
-        role: "participant",
-        name: "Гость",
-        initial: "Г",
-      },
-      SECRET_KEY,
-      { expiresIn: "3d" },
-    );
-
-    res.cookie("token", guestToken, {
-      httpOnly: true,
-      maxAge: 3 * 24 * 60 * 60 * 1000,
-      sameSite: "strict",
-    });
-
-    req.user = {
-      id: newGuest.Tourist_ID,
-      role: "participant",
-      name: "Гость",
-      initial: "Г",
-    };
-
-    console.log(`Middleware: создан гость с ID ${req.user.id}`);
-    next();
-  } catch (err) {
-    console.error("Ошибка создания гостя в middleware:", err);
-    res.status(500).json({ error: "Не удалось создать пользователя" });
-  }
-}
 
 // СОХРАНЕНИЕ КАСТОМНОГО МАРШРУТА НА SHELDURE.HTML
 app.post(

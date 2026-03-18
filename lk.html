@@ -321,19 +321,16 @@
 
                 <div class="form-group">
                   <label>Email</label>
-                  <input
-                    type="email"
-                    v-model="profileForm.email"
-                    required
-                    readonly
-                    style="
-                      background-color: #f5f5f5;
-                      color: #666;
-                      cursor: not-allowed;
-                    "
-                  />
+                  <input type="email" v-model="profileForm.email" required />
+                  <span
+                    v-if="profileForm.new_email"
+                    class="email-pending"
+                    style="color: #f39c12; font-size: 0.9em"
+                  >
+                    Новый email ожидает подтверждения: {{ profileForm.new_email
+                    }}. Проверьте почту.
+                  </span>
                 </div>
-
                 <div class="form-group">
                   <label>Телефон</label>
                   <input
@@ -798,6 +795,7 @@
               phone: "",
               age: 0,
               gender: "",
+              new_email: "",
               Guide_License: "",
               experience: "",
               link_vk_group: "",
@@ -886,7 +884,7 @@
               const res = await fetch("/api/get-user-profile");
               if (res.ok) {
                 const data = await res.json();
-                this.profileForm = { ...data };
+                this.profileForm = { ...data, new_email: data.new_email || "" };
               }
             } catch (err) {
               console.error("Не удалось загрузить профиль", err);
@@ -957,6 +955,23 @@
               const result = await res.json();
 
               if (res.ok) {
+                if (result.status === "email_pending") {
+                  this.user.name = result.user.name;
+                  this.user.initial = result.user.initial;
+                  alert(result.message);
+                  // Перезагружаем профиль, чтобы увидеть new_email
+                  this.loadUserProfile();
+                } else if (result.status === "ok") {
+                  this.user.name = result.user.name;
+                  this.user.initial = result.user.initial;
+                  if (result.newLicenseUrl) {
+                    this.profileForm.Guide_License = result.newLicenseUrl;
+                  }
+                  if (this.$refs.guideLicenseFile)
+                    this.$refs.guideLicenseFile.value = "";
+                  alert("Данные успешно обновлены!");
+                }
+
                 this.user.name = result.user.name;
                 this.user.initial = result.user.initial;
                 this.user.tg_link = result.user.tg_link;
@@ -1451,6 +1466,16 @@
               this.routes = [];
             });
           this.loadUserGroups();
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has("verified")) {
+            alert("Email успешно подтверждён!");
+            // Убираем параметр из URL, чтобы не показывать при обновлении
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
+          }
         },
       }).mount("#app");
     </script>

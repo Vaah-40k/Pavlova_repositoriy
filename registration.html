@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <title>Регистрация</title>
   </head>
@@ -21,6 +25,7 @@
             <h1><i class="fas fa-mountain"></i> Регистрация</h1>
           </div>
 
+          <!-- Имя -->
           <div class="form-group">
             <label class="form-label" for="firstName">Имя</label>
             <input
@@ -36,6 +41,7 @@
             </div>
           </div>
 
+          <!-- Фамилия -->
           <div class="form-group">
             <label class="form-label" for="lastName">Фамилия</label>
             <input
@@ -51,6 +57,7 @@
             </div>
           </div>
 
+          <!-- Email -->
           <div class="form-group">
             <label class="form-label" for="email">Email</label>
             <input
@@ -66,9 +73,10 @@
             </div>
           </div>
 
+          <!-- Пароль -->
           <div class="form-group">
             <label class="form-label" for="password">Пароль</label>
-            <div class="password-wrapper">
+            <div class="password-wrapper" style="position: relative">
               <input
                 :type="showPassword ? 'text' : 'password'"
                 id="password"
@@ -92,6 +100,37 @@
             </div>
           </div>
 
+          <!-- Подтверждение пароля (новое поле) -->
+          <div class="form-group">
+            <label class="form-label" for="confirmPassword"
+              >Повторите пароль</label
+            >
+            <div class="password-wrapper" style="position: relative">
+              <input
+                :type="showConfirmPassword ? 'text' : 'password'"
+                id="confirmPassword"
+                class="form-input"
+                v-model="formData.confirmPassword"
+                @blur="validateField('confirmPassword')"
+                placeholder="Повторите пароль"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                @click="toggleConfirmPasswordVisibility"
+              >
+                <i
+                  :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                ></i>
+              </button>
+            </div>
+            <div class="error-message" v-if="errors.confirmPassword">
+              <i class="fas fa-exclamation-circle"></i> {{
+              errors.confirmPassword }}
+            </div>
+          </div>
+
+          <!-- Роль -->
           <div class="form-group">
             <label class="form-label" for="role">Укажите вашу роль</label>
             <div class="select-wrapper">
@@ -111,7 +150,8 @@
             </div>
           </div>
 
-          <div class="form-group">
+          <!-- Уровень подготовки -->
+          <div class="form-group" style="display: none">
             <label class="form-label" for="experience"
               >Укажите ваш уровень подготовки</label
             >
@@ -137,8 +177,8 @@
 
           <button type="submit" class="submit-btn" :disabled="isSubmitting">
             <span v-if="!isSubmitting">
-              <i class="fas fa-user-plus"></i>
               <p>Зарегистрироваться</p>
+              <i class="fas fa-user-plus"></i>
             </span>
             <span v-else>
               <i class="fas fa-spinner fa-spin"></i> Обработка...
@@ -203,6 +243,7 @@
               lastName: "",
               email: "",
               password: "",
+              confirmPassword: "", // новое поле
               role: "",
               experience: "",
             },
@@ -211,10 +252,12 @@
               lastName: "",
               email: "",
               password: "",
+              confirmPassword: "", // новое поле ошибки
               role: "",
               experience: "",
             },
             showPassword: false,
+            showConfirmPassword: false, // отдельный переключатель для подтверждения
             isSubmitting: false,
             submissionSuccess: false,
           };
@@ -243,10 +286,26 @@
                   : "Введите корректный email адрес";
                 break;
               case "password":
-                this.errors.password =
-                  value.length >= 8
-                    ? ""
-                    : "Пароль должен содержать минимум 8 символов";
+                // Проверка: минимум 8 символов, хотя бы одна цифра, хотя бы один спецсимвол
+                const passwordRegex =
+                  /^(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;'"\\|,.<>/?~`-]).{8,}$/;
+                if (!passwordRegex.test(value)) {
+                  this.errors.password =
+                    "Пароль должен быть не менее 8 символов и содержать хотя бы одну цифру и один спецсимвол";
+                } else {
+                  this.errors.password = "";
+                }
+                // При изменении пароля перепроверяем confirmPassword (если он уже заполнен)
+                if (this.formData.confirmPassword) {
+                  this.validateField("confirmPassword");
+                }
+                break;
+              case "confirmPassword":
+                if (value !== this.formData.password) {
+                  this.errors.confirmPassword = "Пароли не совпадают";
+                } else {
+                  this.errors.confirmPassword = "";
+                }
                 break;
               case "role":
                 this.errors.role = value
@@ -262,16 +321,24 @@
           },
 
           validateForm() {
-            Object.keys(this.formData).forEach((field) => {
+            // Валидируем все поля
+            [
+              "firstName",
+              "lastName",
+              "email",
+              "password",
+              "confirmPassword",
+              "role",
+            ].forEach((field) => {
               this.validateField(field);
             });
-
+            // Проверяем, все ли ошибки пусты
             return Object.values(this.errors).every((error) => error === "");
           },
 
           async submitForm() {
             if (!this.validateForm()) {
-              return;
+              return; // если есть ошибки, не отправляем
             }
             this.isSubmitting = true;
 
@@ -288,11 +355,12 @@
 
               if (response.ok && result.status === "ok") {
                 this.submissionSuccess = true;
-                if (result.role === "organizer") {
-                  window.location.href = "/lk"; // Или куда-то для гида (например, страница создания маршрутов, если будет)
-                } else {
-                  window.location.href = "/trek";
-                }
+                alert(
+                  "Регистрация прошла успешно! На вашу почту отправлено письмо с подтверждением.",
+                );
+                // Не редиректим, остаёмся на странице или показываем информационное окно
+                // Можно очистить форму
+                this.resetForm();
               } else {
                 alert(result.message || "Ошибка при регистрации");
               }
@@ -300,23 +368,23 @@
               console.error(error);
               alert(
                 "Ошибка сети или сервера: " +
-                  (e.message || "Неизвестная ошибка"),
+                  (error.message || "Неизвестная ошибка"),
               );
-              this.showModal = false;
             } finally {
               this.isSubmitting = false;
             }
           },
+
           resetForm() {
             this.formData = {
               firstName: "",
               lastName: "",
               email: "",
               password: "",
+              confirmPassword: "",
               role: "",
               experience: "",
             };
-
             Object.keys(this.errors).forEach((key) => {
               this.errors[key] = "";
             });
@@ -324,6 +392,9 @@
 
           togglePasswordVisibility() {
             this.showPassword = !this.showPassword;
+          },
+          toggleConfirmPasswordVisibility() {
+            this.showConfirmPassword = !this.showConfirmPassword;
           },
         },
       }).mount("#app");

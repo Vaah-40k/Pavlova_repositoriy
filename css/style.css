@@ -646,14 +646,24 @@ select.form-input {
   color: white;
   border: none;
   border-radius: 10px;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
   margin-top: 10px;
   letter-spacing: 0.5px;
+  display: flex;
+  justify-content: center;
 }
-
+.submit-btn span {
+  display: flex;
+}
+.submit-btn span i {
+  margin-left: 1vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .submit-btn:hover {
   background-color: #1a2239;
   transform: translateY(-2px);

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
@@ -49,9 +49,9 @@
           <div class="hero-content">
             <h1>Планируй поход просто и удобно</h1>
             <p>Создай маршрут, собери команду, будь готов</p>
-            <button class="btn-primary" @click="createRoute">
+            <button class="btn-primary">
               <i class="fas fa-plus-circle"></i>
-              <a href="./registration">Создать маршрут</a>
+              <a href="./scheduler">Создать маршрут</a>
             </button>
           </div>
         </div>
@@ -203,16 +203,7 @@
               this.isLoggedIn = false;
             }
           },
-          createRoute() {
-            // Если авторизован - перенаправляем, если нет - показываем alert
-            if (this.isLoggedIn) {
-              window.location.href = "/trek";
-            } else {
-              alert(
-                "Функция создания маршрута будет доступна после регистрации!",
-              );
-            }
-          },
+
           toggleMobileMenu() {
             this.mobileMenuActive = !this.mobileMenuActive;
           },

@@ -48,6 +48,8 @@ module.exports = function (sequelize) {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      new_email: { type: DataTypes.STRING, allowNull: true },
+      email_token_expires: { type: DataTypes.DATE, allowNull: true },
     },
     {
       timestamps: false,
