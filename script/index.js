@@ -41,6 +41,37 @@ if (!fs.existsSync(licensesDir)) {
 }
 
 const getGuideDir = (req) => {
+  // Если есть req.user (установлен middleware) — используем его
+  if (req.user) {
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    if (role === "organizer") {
+      const guideDir = path.join(
+        __dirnames,
+        "uploads",
+        "guide",
+        `guide_${userId}`,
+      );
+      if (!fs.existsSync(guideDir)) {
+        fs.mkdirSync(guideDir, { recursive: true });
+      }
+      return guideDir;
+    } else {
+      const participantDir = path.join(
+        __dirnames,
+        "uploads",
+        "participant",
+        `user_${userId}`,
+      );
+      if (!fs.existsSync(participantDir)) {
+        fs.mkdirSync(participantDir, { recursive: true });
+      }
+      return participantDir;
+    }
+  }
+
+  // Запасной вариант: пытаемся достать из токена (для старых мест, где middleware не используется)
   const token = req.cookies.token;
   if (!token) return null;
 
@@ -60,18 +91,18 @@ const getGuideDir = (req) => {
         fs.mkdirSync(guideDir, { recursive: true });
       }
       return guideDir;
+    } else {
+      const participantDir = path.join(
+        __dirnames,
+        "uploads",
+        "participant",
+        `user_${userId}`,
+      );
+      if (!fs.existsSync(participantDir)) {
+        fs.mkdirSync(participantDir, { recursive: true });
+      }
+      return participantDir;
     }
-
-    const participantDir = path.join(
-      __dirnames,
-      "uploads",
-      "participant",
-      `user_${userId}`,
-    );
-    if (!fs.existsSync(participantDir)) {
-      fs.mkdirSync(participantDir, { recursive: true });
-    }
-    return participantDir;
   } catch (err) {
     console.error("Ошибка определения папки пользователя:", err);
     return null;
@@ -1199,144 +1230,204 @@ app.post("/api/publish-route", async (req, res) => {
   }
 });
 
-// СОХРАНЕНИЕ КАСТОМНОГО МАРШРУТА НА SHELDURE.HTML
-app.post("/api/save-custom-route", uploadRoute.any(), async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ error: "Не авторизован" });
+async function ensureUser(req, res, next) {
+  let token = req.cookies.token;
+  let decoded = null;
 
+  // Пробуем проверить существующий токен
+  if (token) {
+    try {
+      decoded = jwt.verify(token, SECRET_KEY);
+      req.user = {
+        id: decoded.id,
+        role: decoded.role,
+        name: decoded.name,
+        initial: decoded.initial,
+      };
+      return next();
+    } catch (err) {
+      // Токен недействителен — игнорируем, создадим гостя
+      console.warn("Недействительный токен, создаём гостя");
+    }
+  }
+
+  // Создаём гостя
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    const role = decoded.role;
-    const userId = decoded.id;
+    const newGuest = await Turist.create({
+      role: "participant", // все остальные поля будут NULL
+    });
 
-    // Данные приходят в req.body как строки, так как это FormData. Нужно парсить JSON.
-    const {
-      name,
-      description,
-      length,
-      duration,
-      days,
-      map_zoom,
-      map_center,
-      cost_organization,
-    } = req.body;
+    const guestToken = jwt.sign(
+      {
+        id: newGuest.Tourist_ID,
+        role: "participant",
+        name: "Гость",
+        initial: "Г",
+      },
+      SECRET_KEY,
+      { expiresIn: "3d" },
+    );
 
-    // Парсим сложные объекты
-    const points = JSON.parse(req.body.points || "[]");
-    const schedule = JSON.parse(req.body.schedule || "[]");
-    const equipment = JSON.parse(req.body.equipment || "[]");
-    const costs = JSON.parse(req.body.costs || "[]");
+    res.cookie("token", guestToken, {
+      httpOnly: true,
+      maxAge: 3 * 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
 
-    const routeDataPayload = {
-      Route_Name: name || "Без названия",
-      Route_Description: description || "",
-      Route_Length: parseInt(length) || 0,
-      Route_Duration: duration || "",
-      Route_Type: "Custom",
-      Terrain_Type: "Mixed",
-      Route_Days: req.body.Route_Days,
-      Map_Zoom: map_zoom || null,
-      Map_Center: map_center || null,
-      equipment: JSON.stringify(equipment),
-      costs: JSON.stringify(costs),
-      Cost_organization: parseInt(cost_organization) || 0, // Сохраняем взнос
-      point_names: JSON.stringify(
-        points.map((p, i) => p.name || `Точка ${i + 1}`),
-      ),
+    req.user = {
+      id: newGuest.Tourist_ID,
+      role: "participant",
+      name: "Гость",
+      initial: "Г",
     };
 
-    // Обработка фотографий (Photo1 ... Photo4)
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        const relativePath = file.path
-          .replace(__dirnames, "")
-          .replace(/\\/g, "/")
-          .replace(/^\/*/, "/");
+    console.log(`Middleware: создан гость с ID ${req.user.id}`);
+    next();
+  } catch (err) {
+    console.error("Ошибка создания гостя в middleware:", err);
+    res.status(500).json({ error: "Не удалось создать пользователя" });
+  }
+}
 
-        if (file.fieldname === "photo_0")
-          routeDataPayload.Photo1 = relativePath;
-        if (file.fieldname === "photo_1")
-          routeDataPayload.Photo2 = relativePath;
-        if (file.fieldname === "photo_2")
-          routeDataPayload.Photo3 = relativePath;
-        if (file.fieldname === "photo_3")
-          routeDataPayload.Photo4 = relativePath;
-      });
-    }
-    if (role === "participant") {
-      routeDataPayload.Tourist_ID = userId;
-      routeDataPayload.Guide_ID = null;
-    } else if (role === "organizer") {
-      routeDataPayload.Guide_ID = userId;
-      routeDataPayload.Tourist_ID = null;
-    } else {
-      return res.status(403).json({ error: "Недопустимая роль" });
-    }
+// СОХРАНЕНИЕ КАСТОМНОГО МАРШРУТА НА SHELDURE.HTML
+app.post(
+  "/api/save-custom-route",
+  ensureUser,
+  uploadRoute.any(),
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const role = req.user.role;
 
-    // Заполнение точек WaiPoint
-    for (let i = 0; i < 20; i++) {
-      const key = `WaiPoint${i + 1}`;
-      routeDataPayload[key] = points[i]
-        ? `${points[i].lat}, ${points[i].lng}`
-        : null;
-    }
+      // Данные приходят в req.body как строки (FormData)
+      const {
+        name,
+        description,
+        length,
+        duration,
+        map_zoom,
+        map_center,
+        cost_organization,
+      } = req.body;
 
-    const whereClause = { Route_Name: name };
-    if (role === "participant") whereClause.Tourist_ID = userId;
-    else if (role === "organizer") whereClause.Guide_ID = userId;
+      // Парсим сложные объекты
+      const points = JSON.parse(req.body.points || "[]");
+      const schedule = JSON.parse(req.body.schedule || "[]");
+      const equipment = JSON.parse(req.body.equipment || "[]");
+      const costs = JSON.parse(req.body.costs || "[]");
 
-    const existingRoute = await Custum_Route.findOne({ where: whereClause });
+      const routeDataPayload = {
+        Route_Name: name || "Без названия",
+        Route_Description: description || "",
+        Route_Length: parseInt(length) || 0,
+        Route_Duration: duration || "",
+        Route_Type: "Custom",
+        Terrain_Type: "Mixed",
+        Route_Days: req.body.Route_Days,
+        Map_Zoom: map_zoom || null,
+        Map_Center: map_center || null,
+        equipment: JSON.stringify(equipment),
+        costs: JSON.stringify(costs),
+        Cost_organization: parseInt(cost_organization) || 0,
+        point_names: JSON.stringify(
+          points.map((p, i) => p.name || `Точка ${i + 1}`),
+        ),
+      };
 
-    if (existingRoute) {
-      // Проверка статуса: если не 'private', запрещаем сохранение
-      if (existingRoute.status !== "private") {
-        return res.status(403).json({
-          error:
-            "Сообщение 1: Редактирование маршрута запрещено, так как его статус не позволяет изменений.",
+      // Обработка фотографий
+      if (req.files && req.files.length > 0) {
+        req.files.forEach((file) => {
+          const relativePath = file.path
+            .replace(__dirnames, "")
+            .replace(/\\/g, "/")
+            .replace(/^\/*/, "/");
+
+          if (file.fieldname === "photo_0")
+            routeDataPayload.Photo1 = relativePath;
+          if (file.fieldname === "photo_1")
+            routeDataPayload.Photo2 = relativePath;
+          if (file.fieldname === "photo_2")
+            routeDataPayload.Photo3 = relativePath;
+          if (file.fieldname === "photo_3")
+            routeDataPayload.Photo4 = relativePath;
         });
       }
-    }
 
-    let targetRouteId;
-    // Если обновляем существующий, нужно сохранить старые фото, если новые не загружены
-    if (existingRoute) {
-      if (!routeDataPayload.Photo1)
-        routeDataPayload.Photo1 = existingRoute.Photo1;
-      if (!routeDataPayload.Photo2)
-        routeDataPayload.Photo2 = existingRoute.Photo2;
-      if (!routeDataPayload.Photo3)
-        routeDataPayload.Photo3 = existingRoute.Photo3;
-      if (!routeDataPayload.Photo4)
-        routeDataPayload.Photo4 = existingRoute.Photo4;
-      await existingRoute.update(routeDataPayload);
-      targetRouteId = existingRoute.Route_custom_ID;
-    } else {
-      const createdRoute = await Custum_Route.create(routeDataPayload);
-      targetRouteId = createdRoute.Route_custom_ID;
-    }
+      // Привязка к пользователю
+      if (role === "participant") {
+        routeDataPayload.Tourist_ID = userId;
+        routeDataPayload.Guide_ID = null;
+      } else if (role === "organizer") {
+        routeDataPayload.Guide_ID = userId;
+        routeDataPayload.Tourist_ID = null;
+      } else {
+        return res.status(403).json({ error: "Недопустимая роль" });
+      }
 
-    // Расписание
-    if (schedule.length > 0) {
-      const scheduleRecords = schedule.map((item) => ({
-        Route_custom_ID: targetRouteId,
-        Point_Index: item.point_index,
-        Visit_Date: item.visit_date,
-        Visit_Time: item.visit_time,
-        Note: "Запланировано",
-      }));
-      await Route_Schedule.bulkCreate(scheduleRecords);
-    }
+      // Заполнение точек WaiPoint
+      for (let i = 0; i < 20; i++) {
+        const key = `WaiPoint${i + 1}`;
+        routeDataPayload[key] = points[i]
+          ? `${points[i].lat}, ${points[i].lng}`
+          : null;
+      }
 
-    res.status(200).json({
-      status: "ok",
-      message: "Маршрут успешно сохранен!",
-      route_id: targetRouteId,
-    });
-  } catch (err) {
-    console.error("Ошибка при сохранении:", err);
-    res.status(500).json({ error: "Ошибка сохранения маршрута" });
-  }
-});
+      // Поиск существующего маршрута (для обновления)
+      const whereClause = { Route_Name: name };
+      if (role === "participant") whereClause.Tourist_ID = userId;
+      else if (role === "organizer") whereClause.Guide_ID = userId;
+
+      const existingRoute = await Custum_Route.findOne({ where: whereClause });
+
+      if (existingRoute) {
+        if (existingRoute.status !== "private") {
+          return res.status(403).json({
+            error: "Редактирование маршрута запрещено из-за его статуса.",
+          });
+        }
+      }
+
+      let targetRouteId;
+      if (existingRoute) {
+        // Сохраняем старые фото, если новые не загружены
+        if (!routeDataPayload.Photo1)
+          routeDataPayload.Photo1 = existingRoute.Photo1;
+        if (!routeDataPayload.Photo2)
+          routeDataPayload.Photo2 = existingRoute.Photo2;
+        if (!routeDataPayload.Photo3)
+          routeDataPayload.Photo3 = existingRoute.Photo3;
+        if (!routeDataPayload.Photo4)
+          routeDataPayload.Photo4 = existingRoute.Photo4;
+        await existingRoute.update(routeDataPayload);
+        targetRouteId = existingRoute.Route_custom_ID;
+      } else {
+        const createdRoute = await Custum_Route.create(routeDataPayload);
+        targetRouteId = createdRoute.Route_custom_ID;
+      }
+
+      // Расписание
+      if (schedule.length > 0) {
+        const scheduleRecords = schedule.map((item) => ({
+          Route_custom_ID: targetRouteId,
+          Point_Index: item.point_index,
+          Visit_Date: item.visit_date,
+          Visit_Time: item.visit_time,
+          Note: "Запланировано",
+        }));
+        await Route_Schedule.bulkCreate(scheduleRecords);
+      }
+
+      res.status(200).json({
+        status: "ok",
+        message: "Маршрут успешно сохранен!",
+        route_id: targetRouteId,
+      });
+    } catch (err) {
+      console.error("Ошибка при сохранении:", err);
+      res.status(500).json({ error: "Ошибка сохранения маршрута" });
+    }
+  },
+);
 
 // УДАЛЕНИЕ МАРШУРТА ИЗ ЛИЧНОГО КАБИНЕТА
 app.delete("/api/delete-route", async (req, res) => {

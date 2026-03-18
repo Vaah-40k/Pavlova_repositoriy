@@ -1109,7 +1109,8 @@
             modalTitleEl.textContent =
               "Сколько составит ваш организационный взнос?";
           } else if (userRole === "participant") {
-            modalTitleEl.textContent = "Сколько возмёте денег с собой?";
+            modalTitleEl.textContent =
+              "Сколько возмёте денежных средст с собой?";
           } else {
             modalTitleEl.textContent =
               "Сколько составит ваш организационный взнос?";
@@ -1204,8 +1205,7 @@
               const textInput = rec.querySelector(
                 'input[data-field-type="text"]',
               );
-              const timeInput =
-                rparticipantec.querySelector('input[type="time"]');
+              const timeInput = rec.querySelector('input[type="time"]');
               const switchBtn = rec.querySelector(".record-switch");
 
               // Определяем режим (Текст или Точка)
