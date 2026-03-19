@@ -1,196 +1,214 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>Авторизация</title>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <title>Авторизация</title>
-</head>
+  <body>
+    <div id="app">
+      <div class="container-2">
+        <form class="registration-form" @submit.prevent="submitForm">
+          <div class="form-header">
+            <h1><i class="mountain"></i> Авторизация</h1>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              class="form-input"
+              v-model="formData.email"
+              @blur="validateField('email')"
+              placeholder="example@mail.com"
+            />
+            <div class="error-message" v-if="errors.email">
+              <i class="fas fa-exclamation-circle"></i> {{ errors.email }}
+            </div>
+          </div>
 
-<body>
-  <div id="app">
-    <div class="container-2">
-      <form class="registration-form" @submit.prevent="submitForm">
-        <div class="form-header">
-          <h1><i class="fas fa-mountain"></i> Авторизация</h1>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="email">Email</label>
-          <input type="email" id="email" class="form-input" v-model="formData.email" @blur="validateField('email')"
-            placeholder="example@mail.com" />
-          <div class="error-message" v-if="errors.email">
-            <i class="fas fa-exclamation-circle"></i> {{ errors.email }}
+          <div class="form-group">
+            <label class="form-label" for="password">Пароль</label>
+            <div class="password-wrapper">
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                id="password"
+                class="form-input"
+                v-model="formData.password"
+                @blur="validateField('password')"
+                placeholder="Не менее 8 символов"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                @click="togglePasswordVisibility"
+              >
+                <i
+                  :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"
+                ></i>
+              </button>
+            </div>
+            <div class="error-message" v-if="errors.password">
+              <i class="fas fa-exclamation-circle"></i> {{ errors.password }}
+            </div>
+          </div>
+          <button type="submit" class="submit-btn" :disabled="isSubmitting">
+            <span v-if="!isSubmitting">
+              <i class="fas fa-user-plus"></i>
+              <p>Войти</p>
+            </span>
+            <span v-else>
+              <i class="fas fa-spinner fa-spin"></i> Обработка...
+            </span>
+          </button>
+          <div class="reg-a">
+            <a href="./registration"
+              >У вас нет аккаунта?
+              <span style="color: rgb(44, 44, 139)">Зарегестрируйтесь</span></a
+            >
+          </div>
+          <div class="success-message" v-if="submissionSuccess">
+            <i class="fas fa-check-circle"></i> Авторизация успешна! Добро
+            пожаловать в наше сообщество!
+          </div>
+        </form>
+      </div>
+
+      <!-- Футер -->
+      <footer>
+        <div class="container">
+          <div class="footer-content">
+            <div class="footer-about">
+              <div class="footer-logo">TrekPlan</div>
+              <p>
+                Приложение для планирования маршрутов активного отдыха.
+                Открывайте новые места и создавайте незабываемые приключения с
+                TrekPlan.
+              </p>
+            </div>
+
+            <div class="footer-links">
+              <h3>Навигация</h3>
+              <ul>
+                <li><a href="./">Главная</a></li>
+                <li><a href="#about">О приложении</a></li>
+                <li><a href="#features">Возможности</a></li>
+              </ul>
+            </div>
+
+            <div class="footer-contact">
+              <h3>Контакты</h3>
+              <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
+              <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
+              <p>
+                <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
+                15
+              </p>
+              <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+            </div>
           </div>
         </div>
-
-        <div class="form-group">
-          <label class="form-label" for="password">Пароль</label>
-          <div class="password-wrapper">
-            <input :type="showPassword ? 'text' : 'password'" id="password" class="form-input"
-              v-model="formData.password" @blur="validateField('password')" placeholder="Не менее 8 символов" />
-            <button type="button" class="password-toggle" @click="togglePasswordVisibility">
-              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-            </button>
-          </div>
-          <div class="error-message" v-if="errors.password">
-            <i class="fas fa-exclamation-circle"></i> {{ errors.password }}
-          </div>
-        </div>
-        <button type="submit" class="submit-btn" :disabled="isSubmitting">
-          <span v-if="!isSubmitting">
-            <i class="fas fa-user-plus"></i>
-            <p>Войти</p>
-          </span>
-          <span v-else>
-            <i class="fas fa-spinner fa-spin"></i> Обработка...
-          </span>
-        </button>
-        <div class="reg-a">
-          <a href="./registration">У вас нет аккаунта? Зарестрируйтесь</a>
-        </div>
-        <div class="success-message" v-if="submissionSuccess">
-          <i class="fas fa-check-circle"></i> Авторизация успешна! Добро
-          пожаловать в наше сообщество!
-        </div>
-
-      </form>
+      </footer>
     </div>
 
-    <!-- Футер -->
-    <footer>
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-about">
-            <div class="footer-logo">TrekPlan</div>
-            <p>
-              Приложение для планирования маршрутов активного отдыха.
-              Открывайте новые места и создавайте незабываемые приключения с
-              TrekPlan.
-            </p>
-          </div>
+    <script>
+      const { createApp } = Vue;
 
-          <div class="footer-links">
-            <h3>Навигация</h3>
-            <ul>
-              <li><a href="./">Главная</a></li>
-              <li><a href="#about">О приложении</a></li>
-              <li><a href="#features">Возможности</a></li>
-            </ul>
-          </div>
+      createApp({
+        data() {
+          return {
+            formData: {
+              email: "",
+              password: "",
+            },
+            errors: {
+              email: "",
+              password: "",
+            },
+            showPassword: false,
+            isSubmitting: false,
+            submissionSuccess: false,
+          };
+        },
+        methods: {
+          validateField(fieldName) {
+            const value = this.formData[fieldName];
 
-          <div class="footer-contact">
-            <h3>Контакты</h3>
-            <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
-            <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
-            <p>
-              <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
-              15
-            </p>
-            <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
-          </div>
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <script>
-    const { createApp } = Vue;
-
-    createApp({
-      data() {
-        return {
-          formData: {
-            email: "",
-            password: "",
-          },
-          errors: {
-            email: "",
-            password: "",
-          },
-          showPassword: false,
-          isSubmitting: false,
-          submissionSuccess: false,
-        };
-      },
-      methods: {
-        validateField(fieldName) {
-          const value = this.formData[fieldName];
-
-          switch (fieldName) {
-            case "email":
-              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-              this.errors.email = emailRegex.test(value)
-                ? ""
-                : "Введите корректный email адрес";
-              break;
-            case "password":
-              this.errors.password =
-                value.length >= 8
+            switch (fieldName) {
+              case "email":
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                this.errors.email = emailRegex.test(value)
                   ? ""
-                  : "Пароль должен содержать минимум 8 символов";
-              break;
-          }
-        },
+                  : "Введите корректный email адрес";
+                break;
+              case "password":
+                this.errors.password =
+                  value.length >= 8
+                    ? ""
+                    : "Пароль должен содержать минимум 8 символов";
+                break;
+            }
+          },
 
-        validateForm() {
-          Object.keys(this.formData).forEach((field) => {
-            this.validateField(field);
-          });
-
-          return Object.values(this.errors).every((error) => error === "");
-        },
-
-        async submitForm() {
-          if (!this.validateForm()) {
-            return;
-          }
-          this.isSubmitting = true;
-
-          try {
-            const response = await fetch('/autorization', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(this.formData)
+          validateForm() {
+            Object.keys(this.formData).forEach((field) => {
+              this.validateField(field);
             });
 
-            const result = await response.json();
+            return Object.values(this.errors).every((error) => error === "");
+          },
 
-            if (response.ok && result.status === "ok") {
-              this.submissionSuccess = true;
-              window.location.href = "/trek";
-            } else {
-              // Выводить текст ошибки напрямую из ответа сервера
-              alert(result.message || "Ошибка при входе в систему");
+          async submitForm() {
+            if (!this.validateForm()) {
+              return;
             }
-          } catch (error) {
-            console.error("Ошибка соединения:", error);
-            alert("Произошла ошибка сети");
-          } finally {
-            this.isSubmitting = false;
-          }
+            this.isSubmitting = true;
+
+            try {
+              const response = await fetch("/autorization", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(this.formData),
+              });
+
+              const result = await response.json();
+
+              if (response.ok && result.status === "ok") {
+                this.submissionSuccess = true;
+                window.location.href = "/trek";
+              } else {
+                // Выводить текст ошибки напрямую из ответа сервера
+                alert(result.message || "Ошибка при входе в систему");
+              }
+            } catch (error) {
+              console.error("Ошибка соединения:", error);
+              alert("Произошла ошибка сети");
+            } finally {
+              this.isSubmitting = false;
+            }
+          },
+
+          resetForm() {
+            this.formData = {
+              email: "",
+              password: "",
+            };
+
+            Object.keys(this.errors).forEach((key) => {
+              this.errors[key] = "";
+            });
+          },
+
+          togglePasswordVisibility() {
+            this.showPassword = !this.showPassword;
+          },
         },
-
-        resetForm() {
-          this.formData = {
-            email: "",
-            password: "",
-          };
-
-          Object.keys(this.errors).forEach((key) => {
-            this.errors[key] = "";
-          });
-        },
-
-        togglePasswordVisibility() {
-          this.showPassword = !this.showPassword;
-        },
-      },
-    }).mount("#app");
-  </script>
-</body>
-
+      }).mount("#app");
+    </script>
+  </body>
 </html>

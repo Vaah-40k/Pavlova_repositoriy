@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TrekPlan - Создавайте маршруты для активного отдыха</title>
     <link rel="stylesheet" href="style.css" />
+
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   </head>
 
@@ -23,7 +24,7 @@
               <i class="fas fa-bars"></i>
             </button>
 
-            <ul class="nav-menu">
+            <ul class="nav-menu" :class="{ 'mobile-open': mobileMenuActive }">
               <div class="nav-li">
                 <li><a href="#about">О приложении</a></li>
                 <li>

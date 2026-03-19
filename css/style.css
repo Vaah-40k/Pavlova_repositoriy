@@ -351,40 +351,146 @@ footer {
   align-items: center;
 }
 
-.footer-contact i {
-  margin-right: 10px;
-  color: #4caf50;
+.mobile-menu-btn i {
+  display: none;
 }
 
-/* Адаптивность */
+/* Базовая стилизация кнопки-бургера */
+.mobile-menu-btn {
+  display: none; /* будет показан в медиазапросе */
+  width: 30px;
+  height: 20px;
+  position: relative;
+  border: none;
+  background: transparent; /* убираем лишний фон */
+  cursor: pointer;
+  padding: 0;
+
+  /* Средняя полоска через фон */
+  background: linear-gradient(#333, #333) no-repeat center / 100% 3px;
+}
+
+/* Верхняя и нижняя полоски через псевдоэлементы */
+.mobile-menu-btn::before,
+.mobile-menu-btn::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background-color: #333;
+  left: 0;
+  transition:
+    transform 0.3s,
+    top 0.3s,
+    bottom 0.3s;
+}
+
+.mobile-menu-btn::before {
+  top: 0;
+}
+
+.mobile-menu-btn::after {
+  bottom: 0;
+}
+
+/* Когда меню открыто (класс mobile-open у .nav-menu) */
+.header-content:has(.nav-menu.mobile-open) .mobile-menu-btn {
+  background: transparent; /* убираем среднюю полоску */
+}
+
+.header-content:has(.nav-menu.mobile-open) .mobile-menu-btn::before {
+  transform: rotate(45deg);
+  top: 8px; /* центрируем по вертикали */
+}
+
+.header-content:has(.nav-menu.mobile-open) .mobile-menu-btn::after {
+  transform: rotate(-45deg);
+  bottom: 8px; /* центрируем по вертикали */
+}
+
+/* Показываем бургер только на мобильных устройствах */
+/* Полноэкранное мобильное меню (переопределение старых стилей) */
 @media (max-width: 992px) {
-  .about-content {
-    flex-direction: column;
+  /* Скрываем обычное горизонтальное меню */
+  .mobile-menu-btn {
+    display: block;
+    z-index: 2000;
   }
-
-  .about-text {
-    padding-right: 0;
-    margin-bottom: 50px;
-  }
-
-  .hero h1 {
-    font-size: 40px;
-  }
-
   .nav-menu {
     display: none;
   }
 
-  .mobile-menu-btn {
-    display: block;
-    background: none;
-    border: none;
-    color: white;
+  /* Когда меню открыто — показываем его на весь экран */
+  .nav-menu.mobile-open {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* центрируем по вертикали */
+    align-items: center;
+    position: fixed;
+    top: 10vh;
+    right: 0;
+    width: 20vw;
+    height: 30vh;
+    background-color: #303f69; /* фирменный синий */
+    z-index: 1500;
+    padding: 80px 20px 20px; /* отступ сверху, чтобы шапка не перекрывала пункты */
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Стили для пунктов меню внутри модалки */
+  .nav-menu.mobile-open .nav-li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .nav-menu.mobile-open li {
+    margin: 20px 0;
+    width: auto;
+  }
+
+  .nav-menu.mobile-open a {
+    color: #ffffff;
     font-size: 24px;
-    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    font-family: "Bellota-Text", sans-serif;
+  }
+
+  .nav-menu.mobile-open .btn-login {
+    background-color: #ffffff;
+    color: #303f69;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 30px;
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 30px;
+    width: auto;
+    min-width: 200px;
+    transition: background-color 0.3s;
+  }
+
+  .nav-menu.mobile-open .btn-login:hover {
+    background-color: #f0f0f0;
+  }
+
+  .nav-menu.mobile-open .btn-login a {
+    color: #303f69;
+    font-size: 20px;
+    text-decoration: none;
+  }
+
+  /* Шапка остаётся поверх меню */
+  .header-content {
+    position: relative;
+    z-index: 2000;
+    background-color: #f9f9f9;
   }
 }
-
 @media (max-width: 768px) {
   .hero h1 {
     font-size: 32px;
@@ -1139,10 +1245,12 @@ select.form-input {
 
 .record-switch {
   transition: all 0.2s;
+  border-radius: 30px;
+  background-color: #ffffff;
 }
 
 .record-switch:hover {
-  background-color: #e0e0e0;
+  background-color: #ffffff;
 }
 
 .record-item input[type="text"] {
@@ -1182,18 +1290,34 @@ select.form-input {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: #ff0101;
+  background: #ffffff;
   z-index: 10000;
   display: flex;
   flex-direction: column;
 }
-
+.modal-header h2 {
+  text-align: center;
+}
+.modal-border {
+  border: #666 solid 1px;
+  border-radius: 30px;
+  margin-left: 5%;
+  margin-right: 5%;
+  height: 50%;
+  margin-top: 2%;
+}
 .modal-body-split {
   display: flex;
   flex: 1;
   overflow: hidden; /* Чтобы скроллились только панели внутри */
 }
-
+.close-btn {
+  position: absolute;
+  margin-left: 5%;
+  border: none;
+  background-color: #f8f9fa;
+  margin-bottom: 10%;
+}
 .guide-form-panel,
 .photos-panel {
   padding: 40px;

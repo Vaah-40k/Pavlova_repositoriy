@@ -483,7 +483,7 @@ app.post("/registration", async (req, res) => {
 
     // Создание нового пользователя
     let newUser;
-    const expires = new Date(Date.now() + 5 * 1000); // +10 минут
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // +10 минут
 
     if (role === "participant") {
       newUser = await Turist.create({
@@ -646,10 +646,9 @@ app.post("/autorization", async (req, res) => {
   }
 });
 app.post("/logout", (req, res) => {
-  res.clearCookie("token");
-  (res.status(200), json({ message: "Вы вышли из аккаунта" }));
+  res.clearCookie("token", { path: "/" }); // очищаем httpOnly куку
+  res.status(200).json({ message: "Вы вышли из аккаунта" });
 });
-
 // ПРОВЕРКА АВТОРИЗАЦИИ
 app.get("/api/auth-status", (req, res) => {
   const token = req.cookies.token;

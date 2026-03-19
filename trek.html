@@ -16,23 +16,22 @@
       <header>
         <div class="container">
           <div class="header-content">
-            <a href="/" class="logo" style="margin-left: 4%">
-              <b>TrekPlan</b></a
-            >
+            <a href="/" class="logo">
+              <i class="fas fa-route"></i>
+              <b>TrekPlan</b>
+            </a>
 
-            <ul class="nav-menu">
+            <button class="mobile-menu-btn" @click="toggleMobileMenu">
+              <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-menu" :class="{ 'mobile-open': mobileMenuActive }">
               <div class="nav-li">
                 <li><a href="/scheduler">Планировщик</a></li>
-                <li>
-                  <a href="/trek" class="active" style="margin-left: 3em"
-                    >Маршруты</a
-                  >
-                </li>
+                <li><a href="/trek" class="active">Маршруты</a></li>
               </div>
-              <button
-                class="btn-login"
-                style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%"
-              >
+
+              <button class="btn-login">
                 <a v-if="!isLoggedIn" href="/autorization">Войти</a>
                 <a v-else href="/lk">Личный кабинет</a>
               </button>
@@ -42,7 +41,7 @@
       </header>
 
       <section class="hero-2">
-        <h1>Зимние маршруты</h1>
+        <h1>Выбери свой маршрут</h1>
         <p>Выберите свое приключение на ближайшие 4 месяца</p>
         <input
           class="search"
@@ -173,13 +172,12 @@
 
             <div class="footer-contact">
               <h3>Контакты</h3>
-              <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
-              <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
+              <p><i class="envelope"></i> info@trekplan.com</p>
+              <p><i class="phone"></i> +7 (999) 123-45-67</p>
               <p>
-                <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
-                15
+                <i class="map-marker-alt"></i> Москва, ул. Туристическая, 15
               </p>
-              <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+              <p><i class="clock"></i> Пн-Пт: 9:00-18:00</p>
             </div>
           </div>
         </div>

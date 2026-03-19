@@ -22,7 +22,7 @@
           action="/registration"
         >
           <div class="form-header">
-            <h1><i class="fas fa-mountain"></i> Регистрация</h1>
+            <h1><i class="mountain"></i> Регистрация</h1>
           </div>
 
           <!-- Имя -->
@@ -178,14 +178,17 @@
           <button type="submit" class="submit-btn" :disabled="isSubmitting">
             <span v-if="!isSubmitting">
               <p>Зарегистрироваться</p>
-              <i class="fas fa-user-plus"></i>
+              <i class="user-plus"></i>
             </span>
             <span v-else>
               <i class="fas fa-spinner fa-spin"></i> Обработка...
             </span>
           </button>
           <div class="reg-a">
-            <a href="./autorization">У вас есть аккаунт? Войти</a>
+            <a href="./autorization"
+              >У вас есть аккаунт?
+              <span style="color: rgb(44, 44, 139)">Войти</span></a
+            >
           </div>
 
           <div class="success-message" v-if="submissionSuccess">
@@ -219,13 +222,12 @@
 
             <div class="footer-contact">
               <h3>Контакты</h3>
-              <p><i class="fas fa-envelope"></i> info@trekplan.com</p>
-              <p><i class="fas fa-phone"></i> +7 (999) 123-45-67</p>
+              <p><i class="envelope"></i> info@trekplan.com</p>
+              <p><i class="phone"></i> +7 (999) 123-45-67</p>
               <p>
-                <i class="fas fa-map-marker-alt"></i> Москва, ул. Туристическая,
-                15
+                <i class="map-marker-alt"></i> Москва, ул. Туристическая, 15
               </p>
-              <p><i class="fas fa-clock"></i> Пн-Пт: 9:00-18:00</p>
+              <p><i class="clock"></i> Пн-Пт: 9:00-18:00</p>
             </div>
           </div>
         </div>
