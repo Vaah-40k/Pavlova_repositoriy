@@ -131,10 +131,22 @@ const storageRoutes = multer.diskStorage({
     else cb(new Error("Не удалось определить папку для загрузки"), null);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-route-" + file.originalname);
+    const userId = req.user ? req.user.id : null;
+    if (!userId)
+      return cb(new Error("Не удалось определить ID пользователя"), null);
+
+    let index = -1;
+    if (file.fieldname === "photo_0") index = 1;
+    else if (file.fieldname === "photo_1") index = 2;
+    else if (file.fieldname === "photo_2") index = 3;
+    else if (file.fieldname === "photo_3") index = 4;
+    if (index === -1) return cb(new Error("Неверное поле фото"), null);
+
+    const ext = path.extname(file.originalname);
+    const newName = `Photo_${index}_${userId}${ext}`;
+    cb(null, newName);
   },
 });
-
 // 4. Инициализация middleware
 const uploadLicense = multer({ storage: storageLicenses });
 const uploadRoute = multer({ storage: storageRoutes });
@@ -168,12 +180,11 @@ async function sendVerificationEmail(email, token, role) {
 
 async function ensureUser(req, res, next) {
   let token = req.cookies.token;
-  let decoded = null;
-
-  // Пробуем проверить существующий токен
+  console.log("ensureUser: token from cookies:", token ? "present" : "missing");
   if (token) {
     try {
-      decoded = jwt.verify(token, SECRET_KEY);
+      const decoded = jwt.verify(token, SECRET_KEY);
+      console.log("ensureUser: decoded token:", decoded);
       req.user = {
         id: decoded.id,
         role: decoded.role,
@@ -182,17 +193,15 @@ async function ensureUser(req, res, next) {
       };
       return next();
     } catch (err) {
-      // Токен недействителен — игнорируем, создадим гостя
-      console.warn("Недействительный токен, создаём гостя");
+      console.error("ensureUser: token verification failed:", err.message);
     }
+  } else {
+    console.log("ensureUser: no token, creating guest");
   }
 
   // Создаём гостя
   try {
-    const newGuest = await Turist.create({
-      role: "participant", // все остальные поля будут NULL
-    });
-
+    const newGuest = await Turist.create({ role: "participant" });
     const guestToken = jwt.sign(
       {
         id: newGuest.Tourist_ID,
@@ -203,20 +212,17 @@ async function ensureUser(req, res, next) {
       SECRET_KEY,
       { expiresIn: "3d" },
     );
-
     res.cookie("token", guestToken, {
       httpOnly: true,
       maxAge: 3 * 24 * 60 * 60 * 1000,
-      sameSite: "strict",
+      sameSite: "lax",
     });
-
     req.user = {
       id: newGuest.Tourist_ID,
       role: "participant",
       name: "Гость",
       initial: "Г",
     };
-
     console.log(`Middleware: создан гость с ID ${req.user.id}`);
     next();
   } catch (err) {
@@ -329,8 +335,13 @@ const Working_Site = () => {
         }
 
         // --- Расходы (для стандартных маршрутов отсутствуют) ---
-        routeData.costs = [];
-
+        try {
+          routeData.costs = route.Equpment_cost
+            ? JSON.parse(route.Equpment_cost)
+            : [];
+        } catch (e) {
+          routeData.costs = [];
+        }
         // --- Дни маршрута (Route_Days) ---
         routeData.route_days = route.Route_Days || null;
 
@@ -393,7 +404,9 @@ const Working_Site = () => {
           routeData.equipment = [];
         }
         try {
-          routeData.costs = route.costs ? JSON.parse(route.costs) : [];
+          routeData.costs = route.Equpment_cost
+            ? JSON.parse(route.Equpment_cost)
+            : [];
         } catch (e) {
           routeData.costs = [];
         }
@@ -447,8 +460,10 @@ app.post("/registration", async (req, res) => {
 
     // Проверка существующего пользователя
     let existingUser = await Turist.findOne({ where: { email } });
+    let existingRole = "participant";
     if (!existingUser) {
       existingUser = await Guide.findOne({ where: { email } });
+      existingRole = "organizer";
     }
 
     // Если пользователь с таким email уже есть и подтверждён
@@ -459,9 +474,12 @@ app.post("/registration", async (req, res) => {
       });
     }
 
-    // Хеширование пароля
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 минут
+
+    let userToAuth = null;
+    let userRole = role;
 
     // Если пользователь существует, но не подтверждён — обновляем данные
     if (existingUser && !existingUser.email_verified) {
@@ -474,52 +492,71 @@ app.post("/registration", async (req, res) => {
         email_token_expires: expires,
       });
 
+      userToAuth = existingUser;
+      userRole = existingRole;
+
       await sendVerificationEmail(email, verificationToken, role);
-      return res.json({
-        status: "ok",
-        message: "Данные обновлены. Проверьте почту для подтверждения.",
-      });
     }
-
     // Создание нового пользователя
-    let newUser;
-    const expires = new Date(Date.now() + 10 * 60 * 1000); // +10 минут
+    else {
+      let newUser;
+      if (role === "participant") {
+        newUser = await Turist.create({
+          password: hashedPassword,
+          First_Name: firstName,
+          Last_Name: lastName,
+          email,
+          role,
+          experience,
+          email_verified: false,
+          email_verification_token: verificationToken,
+          email_token_expires: expires,
+        });
+      } else if (role === "organizer") {
+        newUser = await Guide.create({
+          password: hashedPassword,
+          First_Name: firstName,
+          Last_Name: lastName,
+          email,
+          role,
+          experience,
+          email_verified: false,
+          email_verification_token: verificationToken,
+          email_token_expires: expires,
+        });
+      } else {
+        return res
+          .status(400)
+          .json({ status: "error", message: "Неверная роль" });
+      }
+      userToAuth = newUser;
+      userRole = role;
 
-    if (role === "participant") {
-      newUser = await Turist.create({
-        password: hashedPassword,
-        First_Name: firstName,
-        Last_Name: lastName,
-        email,
-        role,
-        experience,
-        email_verified: false,
-        email_verification_token: verificationToken,
-        email_token_expires: expires,
-      });
-    } else if (role === "organizer") {
-      newUser = await Guide.create({
-        password: hashedPassword,
-        First_Name: firstName,
-        Last_Name: lastName,
-        email,
-        role,
-        experience,
-        email_verified: false,
-        email_verification_token: verificationToken,
-        email_token_expires: expires,
-      });
-    } else {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Неверная роль" });
+      await sendVerificationEmail(email, verificationToken, role);
     }
 
-    await sendVerificationEmail(email, verificationToken, role);
+    // Генерация токена для авторизации (только если email не подтверждён)
+    const userId = userToAuth.Tourist_ID || userToAuth.Guide_ID;
+    const fullName = `${userToAuth.First_Name} ${userToAuth.Last_Name}`;
+    const initial = userToAuth.First_Name
+      ? userToAuth.First_Name[0].toUpperCase()
+      : "?";
+    const token = jwt.sign(
+      { id: userId, role: userRole, name: fullName, initial },
+      SECRET_KEY,
+      { expiresIn: "3d" },
+    );
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: 3 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+    });
 
     res.status(200).json({
       status: "ok",
-      message: "Регистрация успешна. Проверьте почту для подтверждения.",
+      message: existingUser
+        ? "Данные обновлены. Проверьте почту для подтверждения."
+        : "Регистрация успешна. Проверьте почту для подтверждения.",
     });
   } catch (err) {
     console.error("Ошибка регистрации:", err);
@@ -954,6 +991,7 @@ app.post("/api/admin/publish-route", async (req, res) => {
         Photo2: sourceRoute.Photo2 || null,
         Photo3: sourceRoute.Photo3 || null,
         Photo4: sourceRoute.Photo4 || null,
+        Equpment_cost: sourceRoute.Equpment_cost || null,
       },
       { transaction: t },
     );
@@ -1037,6 +1075,7 @@ app.post("/api/admin/approve-route", async (req, res) => {
       Photo3: custom.Photo3,
       Photo4: custom.Photo4,
       Route_Days: custom.Route_Days,
+      Equpment_cost: custom.Equpment_cost || null,
     });
 
     // Создание точек в Route_Point
@@ -1459,7 +1498,7 @@ app.post(
         Map_Zoom: map_zoom || null,
         Map_Center: map_center || null,
         equipment: JSON.stringify(equipment),
-        costs: JSON.stringify(costs),
+        Equpment_cost: JSON.stringify(costs),
         Cost_organization: parseInt(cost_organization) || 0,
         point_names: JSON.stringify(
           points.map((p, i) => p.name || `Точка ${i + 1}`),
@@ -1521,6 +1560,27 @@ app.post(
 
       let targetRouteId;
       if (existingRoute) {
+        // Удаляем старые файлы, если для поля загружен новый файл
+        const fields = ["Photo1", "Photo2", "Photo3", "Photo4"];
+        for (let i = 0; i < fields.length; i++) {
+          const field = fields[i];
+          if (
+            routeDataPayload[field] &&
+            existingRoute[field] &&
+            existingRoute[field] !== routeDataPayload[field]
+          ) {
+            const oldPath = path.join(
+              __dirnames,
+              existingRoute[field].replace(/^\//, ""),
+            );
+            fs.unlink(oldPath, (err) => {
+              if (err)
+                console.error(`Ошибка удаления старого файла ${oldPath}:`, err);
+              else console.log(`Удалён старый файл ${oldPath}`);
+            });
+          }
+        }
+
         // Сохраняем старые фото, если новые не загружены
         if (!routeDataPayload.Photo1)
           routeDataPayload.Photo1 = existingRoute.Photo1;
@@ -1530,6 +1590,7 @@ app.post(
           routeDataPayload.Photo3 = existingRoute.Photo3;
         if (!routeDataPayload.Photo4)
           routeDataPayload.Photo4 = existingRoute.Photo4;
+
         await existingRoute.update(routeDataPayload);
         targetRouteId = existingRoute.Route_custom_ID;
       } else {

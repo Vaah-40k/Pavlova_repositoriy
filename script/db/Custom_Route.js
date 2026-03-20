@@ -139,6 +139,9 @@ module.exports = function (sequelize) {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      Equpment_cost: {
+        type: DataTypes.TEXT,
+      },
     },
     {
       timestamps: false,

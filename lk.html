@@ -350,7 +350,7 @@
                     <input
                       type="number"
                       v-model="profileForm.age"
-                      min="16"
+                      min="18"
                       max="80"
                       @blur="handleAgeBlur"
                       @input="handleAgeInput"
@@ -927,8 +927,8 @@
           handleAgeBlur(event) {
             if (this.profileForm.age > 80) {
               this.profileForm.age = 80;
-            } else if (this.profileForm.age < 16) {
-              this.profileForm.age = 16;
+            } else if (this.profileForm.age < 18) {
+              this.profileForm.age = 18;
             }
           },
 
@@ -1016,8 +1016,6 @@
                 // Очищаем инпут файла
                 if (this.$refs.guideLicenseFile)
                   this.$refs.guideLicenseFile.value = "";
-
-                alert("Данные успешно обновлены!");
               } else {
                 alert(result.message || "Ошибка обновления");
               }
