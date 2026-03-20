@@ -37,28 +37,32 @@
         <main class="content-3">
           <header>
             <div class="container">
-              <div class="header-content">
-                <a href="/" class="logo">
-                  <i class="fas fa-route"></i>
+              <div
+                class="header-content"
+                style="padding-top: 1%; padding-bottom: 1%"
+              >
+                <a href="/" class="logo" style="padding-left: 5%">
+                  <i class="route"></i>
                   <b>TrekPlan</b>
                 </a>
 
                 <button class="mobile-menu-btn" @click="toggleMobileMenu">
-                  <i class="fas fa-bars"></i>
+                  <i class="bars"></i>
                 </button>
 
                 <ul
                   class="nav-menu"
                   :class="{ 'mobile-open': mobileMenuActive }"
                 >
-                  <div class="nav-li">
+                  <div class="nav-li" style="margin-right: 5%">
                     <li><a href="/scheduler">Планировщик</a></li>
                     <li><a href="/trek">Маршруты</a></li>
                   </div>
-
-                  <button class="btn-login" @click.prevent="logout">
-                    <a href="/">Выход</a>
-                  </button>
+                  <div class="log-btn" style="padding-right: 5%">
+                    <button class="btn-login" @click.prevent="logout">
+                      <a href="/">Выход</a>
+                    </button>
+                  </div>
                 </ul>
               </div>
             </div>

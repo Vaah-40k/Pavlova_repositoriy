@@ -13,19 +13,22 @@ body {
 
 .overlay {
   position: fixed;
-  top: 0;
-  left: 2vw;
+  top: 20px;
+  left: 20px;
   width: 30%;
-  height: 100%;
+  max-width: 400px;
+  min-width: 280px;
+  height: auto;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  z-index: 1000;
 }
 
 .container {
   max-width: 768px;
-  min-width: 500px;
+  min-width: 420px;
   background-color: #e8e8e8;
   border-radius: 16px;
   overflow: hidden;
@@ -36,24 +39,21 @@ body {
     border-radius 2s ease-in-out !important;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .container.collapsed {
   height: 73px !important;
-  /* Высота только шапки */
   min-height: 73px !important;
   overflow: hidden;
 }
 
-/* Скрываем контент под шапкой, когда свернуто */
 .container.collapsed > *:not(.header) {
   opacity: 0;
   pointer-events: none;
   transition: opacity 1s;
-  /* Контент исчезает быстрее, чем сворачивается окно */
 }
 
-/* Плавное появление контента при разворачивании */
 .container:not(.collapsed) > *:not(.header) {
   opacity: 1;
   transition: opacity 2s;
@@ -155,12 +155,13 @@ body {
 /* Navigation Tabs */
 .nav-tabs {
   display: flex;
+  flex-wrap: wrap;
   background-color: #9ca3af;
   padding: 0;
+  width: 100%;
 }
 
 .nav-tab {
-  flex: 1;
   padding: 12px 16px;
   background: none;
   border: none;
@@ -172,8 +173,38 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-sizing: border-box;
 }
 
+/* Первая кнопка (вопрос) — фиксированная ширина 40px */
+.nav-tab:nth-child(1) {
+  width: 40px;
+  flex: 0 0 auto;
+  padding: 12px 0;
+}
+
+/* Кнопки 2, 3, 4 (Дни, Точки, Протяженность) — делят оставшееся место поровну */
+.nav-tab:nth-child(2),
+.nav-tab:nth-child(3),
+.nav-tab:nth-child(4) {
+  flex: 1 1 0;
+}
+
+/* Кнопки 5 и 6 (Снаряжение, Стоимость) — по умолчанию каждая занимает 50% */
+.nav-tab:nth-child(5),
+.nav-tab:nth-child(6) {
+  width: 50%;
+  flex: 0 0 auto;
+}
+
+/* Если кнопка «Стоимость» скрыта (класс .no-cost у .nav-tabs), то пятая кнопка растягивается на всю ширину */
+.nav-tabs.no-cost .nav-tab:nth-child(5) {
+  width: 100%;
+  flex: 0 0 auto;
+}
+.nav-tabs.no-cost .nav-tab:nth-child(6) {
+  display: none;
+}
 .nav-tab:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
@@ -209,6 +240,7 @@ body {
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 .control-btn {
@@ -294,36 +326,88 @@ body {
   cursor: se-resize;
 }
 
-/* Responsive Design */
+/* ========== АДАПТИВНОСТЬ ========== */
 @media (max-width: 768px) {
   .overlay {
+    left: 0;
+    right: 0;
+    width: 100%;
     padding: 10px;
+    top: 0;
+    position: fixed;
+    justify-content: center;
   }
-
+  .container {
+    margin: 0 auto;
+    max-width: 95%;
+  }
   .header {
     padding: 12px 16px;
     gap: 12px;
   }
-
   .search-input {
     font-size: 16px;
   }
-
   .nav-tab {
     font-size: 13px;
     padding: 10px 12px;
   }
-
   .modal {
     padding: 20px;
   }
-
   .modal-actions {
     flex-direction: column;
   }
-
   .action-btn {
     width: 100%;
+  }
+  .day-date-input {
+    width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .overlay {
+    padding: 8px;
+  }
+  .header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .profile-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .search-input {
+    padding: 8px 35px 8px 10px;
+    font-size: 14px;
+  }
+  .nav-tab {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .modal-title {
+    font-size: 16px;
+  }
+  .control-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .day-item {
+    font-size: 12px;
+  }
+  .record-item {
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .record-item input[type="text"],
+  .record-item select {
+    min-width: auto;
+    width: 100%;
+  }
+  .day-date-input {
+    width: 90px;
+    font-size: 12px;
   }
 }
 
@@ -338,6 +422,7 @@ body {
   gap: 8px;
   padding: 4px 0;
   font-size: 14px;
+  flex-wrap: wrap;
 }
 
 .record-marker {
@@ -354,10 +439,6 @@ body {
   padding-left: 20px;
 }
 
-.record-item {
-  font-size: 14px;
-}
-
 .day-item.active {
   background-color: #f0f0f03b;
 }
@@ -367,6 +448,8 @@ body {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .day-date-input {

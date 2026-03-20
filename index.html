@@ -14,32 +14,46 @@
       <!-- Шапка сайта -->
       <header>
         <div class="container">
-          <div class="header-content">
-            <a href="#" class="logo">
-              <i class="fas fa-route" style="margin-right: 40%"></i>
-              <b>TrekPlan</b>
-            </a>
-
-            <button class="mobile-menu-btn" @click="toggleMobileMenu">
-              <i class="fas fa-bars"></i>
-            </button>
-
-            <ul class="nav-menu" :class="{ 'mobile-open': mobileMenuActive }">
-              <div class="nav-li">
-                <li><a href="#about">О приложении</a></li>
-                <li>
-                  <a href="#features" style="margin-left: 3em">Возможности</a>
-                </li>
-              </div>
-
-              <button
-                class="btn-login"
-                style="margin-left: 2%; margin-right: -5%; margin-bottom: 5%"
-              >
-                <a v-if="!isLoggedIn" href="./autorization">Войти</a>
-                <a v-else href="./trek">Маршруты</a>
+          <div
+            class="header-content"
+            style="padding-top: 0.5%; padding-bottom: 0.5%"
+          >
+            <div class="logo">
+              <a href="#" class="logo">
+                <i class="route" style="margin-right: 40%"></i>
+                <b>TrekPlan</b>
+              </a>
+            </div>
+            <div class="mobile-menu">
+              <button class="mobile-menu-btn" @click="toggleMobileMenu">
+                <i class="bars"></i>
               </button>
-            </ul>
+            </div>
+            <div class="nav" style="width: 50%; margin-right: 5%">
+              <ul class="nav-menu" :class="{ 'mobile-open': mobileMenuActive }">
+                <div class="nav-li" style="margin-right: 5%">
+                  <li class="nav-li">
+                    <a href="#about">О приложении</a>
+                  </li>
+                  <li>
+                    <a href="#features">Возможности</a>
+                  </li>
+                </div>
+                <div class="log-btn" style="margin-top: 1%">
+                  <button
+                    class="btn-login"
+                    style="
+                      margin-left: 2%;
+                      margin-right: -5%;
+                      margin-bottom: 5%;
+                    "
+                  >
+                    <a v-if="!isLoggedIn" href="./autorization">Войти</a>
+                    <a v-else href="./trek">Маршруты</a>
+                  </button>
+                </div>
+              </ul>
+            </div>
           </div>
         </div>
       </header>

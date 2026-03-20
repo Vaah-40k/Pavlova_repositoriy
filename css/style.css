@@ -61,18 +61,20 @@ header {
 
 .nav-li {
   display: flex;
+  gap: 30px;
+  margin-right: 0;
 }
 
 .nav-menu {
   display: flex;
   list-style: none;
-  padding-top: 2%;
-  padding-right: 5%;
-  font-family: "Bellota-Text";
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 20px;
+  padding: 0;
 }
-
 .nav-menu li {
-  margin-left: -10%;
   font-family: "Bellota-Text";
 }
 
@@ -80,7 +82,6 @@ header {
   color: #000000;
   text-decoration: none;
   font-size: 16px;
-  font-weight: 500;
   transition: color 0.3s;
   font-family: "Bellota-Text";
 }
@@ -90,17 +91,15 @@ header {
 }
 
 .btn-login {
-  background-color: #303f69;
-  color: rgb(255, 255, 255);
-  border: none;
-  padding: 10px 60px;
+  margin-top: 0;
+  padding: 10px 20px;
   border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
+  background-color: #303f69;
+  color: white;
+  border: none;
   cursor: pointer;
   transition: background-color 0.3s;
 }
-
 .btn-login:hover {
   background-color: #1a2239;
 }
@@ -125,6 +124,7 @@ header {
   max-width: 800px;
   margin: 0 auto;
   z-index: 2;
+  padding: 0 20px;
 }
 
 .hero h1 {
@@ -177,6 +177,8 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 40px;
 }
 
 .about-text {
@@ -206,11 +208,13 @@ header {
 
 .about-image {
   flex: 1;
+  text-align: center;
 }
 
 .about-image img {
   width: 70%;
-  margin-left: 30%;
+  margin-left: auto;
+  margin-right: auto;
   border-radius: 10px;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
@@ -278,6 +282,7 @@ footer {
   justify-content: space-between;
   flex-wrap: wrap;
   margin-bottom: 40px;
+  gap: 30px;
 }
 
 .footer-logo {
@@ -357,20 +362,17 @@ footer {
 
 /* Базовая стилизация кнопки-бургера */
 .mobile-menu-btn {
-  display: none; /* будет показан в медиазапросе */
+  display: none;
   width: 30px;
   height: 20px;
   position: relative;
   border: none;
-  background: transparent; /* убираем лишний фон */
+  background: transparent;
   cursor: pointer;
   padding: 0;
-
-  /* Средняя полоска через фон */
   background: linear-gradient(#333, #333) no-repeat center / 100% 3px;
 }
 
-/* Верхняя и нижняя полоски через псевдоэлементы */
 .mobile-menu-btn::before,
 .mobile-menu-btn::after {
   content: "";
@@ -393,25 +395,22 @@ footer {
   bottom: 0;
 }
 
-/* Когда меню открыто (класс mobile-open у .nav-menu) */
 .header-content:has(.nav-menu.mobile-open) .mobile-menu-btn {
-  background: transparent; /* убираем среднюю полоску */
+  background: transparent;
 }
 
 .header-content:has(.nav-menu.mobile-open) .mobile-menu-btn::before {
   transform: rotate(45deg);
-  top: 8px; /* центрируем по вертикали */
+  top: 8px;
 }
 
 .header-content:has(.nav-menu.mobile-open) .mobile-menu-btn::after {
   transform: rotate(-45deg);
-  bottom: 8px; /* центрируем по вертикали */
+  bottom: 8px;
 }
 
-/* Показываем бургер только на мобильных устройствах */
-/* Полноэкранное мобильное меню (переопределение старых стилей) */
+/* ========== АДАПТИВНОСТЬ ========== */
 @media (max-width: 992px) {
-  /* Скрываем обычное горизонтальное меню */
   .mobile-menu-btn {
     display: block;
     z-index: 2000;
@@ -420,26 +419,26 @@ footer {
     display: none;
   }
 
-  /* Когда меню открыто — показываем его на весь экран */
   .nav-menu.mobile-open {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* центрируем по вертикали */
+    justify-content: start;
     align-items: center;
     position: fixed;
-    top: 10vh;
+    top: 3vh;
     right: 0;
-    width: 20vw;
-    height: 30vh;
-    background-color: #303f69; /* фирменный синий */
+    width: 30vw;
+    height: 40vh;
+    background-color: #303f69;
     z-index: 1500;
-    padding: 80px 20px 20px; /* отступ сверху, чтобы шапка не перекрывала пункты */
-    margin: 0;
-    border-radius: 0;
+    padding: 30px 20px 20px 10px;
+    margin-right: 3%;
+    border-radius: 10px;
     box-shadow: none;
+    margin-top: 5%;
+    border: 1px solid #2b385c;
   }
 
-  /* Стили для пунктов меню внутри модалки */
   .nav-menu.mobile-open .nav-li {
     display: flex;
     flex-direction: column;
@@ -454,7 +453,7 @@ footer {
 
   .nav-menu.mobile-open a {
     color: #ffffff;
-    font-size: 24px;
+    font-size: 16px;
     font-weight: 500;
     text-decoration: none;
     font-family: "Bellota-Text", sans-serif;
@@ -464,14 +463,12 @@ footer {
     background-color: #ffffff;
     color: #303f69;
     border: none;
-    padding: 15px 40px;
-    border-radius: 30px;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
-    margin-top: 30px;
-    width: auto;
+    margin-top: 25px;
     min-width: 200px;
     transition: background-color 0.3s;
+    border: 1px solid #9f9f9f;
   }
 
   .nav-menu.mobile-open .btn-login:hover {
@@ -480,37 +477,176 @@ footer {
 
   .nav-menu.mobile-open .btn-login a {
     color: #303f69;
-    font-size: 20px;
+    font-size: 16px;
     text-decoration: none;
   }
 
-  /* Шапка остаётся поверх меню */
   .header-content {
     position: relative;
     z-index: 2000;
     background-color: #f9f9f9;
   }
-}
-@media (max-width: 768px) {
-  .hero h1 {
-    font-size: 32px;
+
+  /* Адаптация about-content */
+  .about-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .about-text {
+    padding-right: 0;
+  }
+  .about-image img {
+    width: 80%;
+    margin: 0 auto;
   }
 
+  /* Адаптация hero */
+  .hero {
+    min-height: 600px;
+    height: auto;
+  }
+  .hero h1 {
+    font-size: 36px;
+  }
   .hero p {
     font-size: 18px;
   }
-
   .btn-primary {
     padding: 12px 30px;
     font-size: 16px;
   }
 
-  .about-text h2,
-  .section-title {
-    font-size: 30px;
+  /* Адаптация dashboard (layout) */
+  .layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    margin: 0;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    height: auto;
+    padding: 15px;
+  }
+  .content-3 {
+    padding: 20px;
+  }
+  .routes {
+    justify-content: center;
+  }
+  .route-card {
+    width: calc(50% - 20px);
+  }
+  .admin-routes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .empty-groups-img {
+    max-width: 60vw;
   }
 }
 
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 28px;
+  }
+  .hero p {
+    font-size: 16px;
+  }
+  .about-text h2,
+  .section-title {
+    font-size: 28px;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .route-card {
+    width: 100%;
+  }
+  .admin-routes-grid {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .profile-form .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  .modal-body-split {
+    flex-direction: column;
+  }
+  .guide-form-panel,
+  .photos-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+  }
+  .photos-panel {
+    border-bottom: none;
+  }
+  .full-screen-modal {
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .registration-form {
+    padding: 25px 20px;
+    margin: 10px;
+  }
+  .form-header h1 {
+    font-size: 24px;
+  }
+  .form-input {
+    padding: 12px 14px;
+  }
+  .logo {
+    font-size: 22px;
+  }
+  .logo i {
+    font-size: 26px;
+  }
+  .btn-login {
+    padding: 8px 16px;
+  }
+  .hero {
+    min-height: 500px;
+  }
+  .hero h1 {
+    font-size: 24px;
+  }
+  .hero p {
+    font-size: 14px;
+    margin-bottom: 25px;
+  }
+  .btn-primary {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  .about-text h2 {
+    font-size: 24px;
+  }
+  .feature-item h3 {
+    font-size: 20px;
+  }
+  .empty-groups-img {
+    max-width: 80vw;
+  }
+  .nav-menu.mobile-open {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    padding: 100px 20px 20px;
+  }
+  .nav-menu.mobile-open a {
+    font-size: 20px;
+  }
+}
+
+/* Остальные стили из оригинального файла (hero-2, cards, pagination, формы и т.д.) остаются без изменений */
 .hero-2 {
   background: #9eb1c7;
   text-align: center;
@@ -798,36 +934,6 @@ select.form-input {
   animation: fadeIn 0.5s ease-out;
 }
 
-@media (max-width: 768px) {
-  .registration-form {
-    padding: 30px 25px;
-    margin: 20px;
-  }
-
-  .footer-content {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .footer-links {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .registration-form {
-    padding: 25px 20px;
-  }
-
-  .form-header h1 {
-    font-size: 24px;
-  }
-
-  .form-input {
-    padding: 12px 14px;
-  }
-}
-
 .reg-a {
   text-align: center;
 }
@@ -1021,7 +1127,6 @@ select.form-input {
 
 .pagination button.active {
   background-color: #5b7db1;
-  /* Зеленый цвет как в вашем дизайне */
   color: white;
   border-color: #5b7db1;
   font-weight: bold;
@@ -1074,17 +1179,14 @@ select.form-input {
 .empty-groups-img {
   width: 100%;
   max-width: 30vw;
-  /* Ограничиваем размер картинки */
   height: auto;
   margin-bottom: 20px;
 }
 
 .empty-groups-text {
   font-family: "Bellota-Text";
-  /* Используем шрифт из вашего CSS */
   font-size: 18px;
   color: #303f69;
-  /* Основной темно-синий цвет из вашей шапки и кнопок */
   max-width: 500px;
   line-height: 1.5;
 }
@@ -1180,9 +1282,7 @@ select.form-input {
 .admin-routes-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  /* 3 колонки */
   gap: 20px;
-  /* Отступ между карточками */
   width: 100%;
 }
 
@@ -1201,7 +1301,6 @@ select.form-input {
   background-color: #218838;
 }
 
-/* Стили для модалки информации (если вы используете встроенные alert/confirm, это опционально, но лучше иметь стили для кнопок внутри карточки) */
 .admin-card-actions {
   display: flex;
   justify-content: space-between;
@@ -1309,7 +1408,7 @@ select.form-input {
 .modal-body-split {
   display: flex;
   flex: 1;
-  overflow: hidden; /* Чтобы скроллились только панели внутри */
+  overflow: hidden;
 }
 .close-btn {
   position: absolute;
@@ -1400,7 +1499,7 @@ select.form-input {
   cursor: pointer;
 }
 .btn-rejected-status {
-  background-color: #dc3545 !important; /* Красный */
+  background-color: #dc3545 !important;
   color: white !important;
   border: none;
   padding: 10px;
@@ -1426,4 +1525,8 @@ select.form-input {
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 0.9em;
+}
+.mobile-menu {
+  position: absolute;
+  margin-left: 85%;
 }

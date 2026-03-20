@@ -444,6 +444,16 @@
           });
 
         function initAfterRole() {
+          function updateNavTabsClass() {
+            const navTabs = document.querySelector(".nav-tabs");
+            const costTab = document.getElementById("cost-tab");
+            if (costTab && getComputedStyle(costTab).display !== "none") {
+              navTabs.classList.remove("no-cost");
+            } else {
+              navTabs.classList.add("no-cost");
+            }
+          }
+
           // Перенесите сюда весь код, который использует userRole (например, отображение вкладки costTab)
           const costTab = document.getElementById("cost-tab");
           if (costTab) {
@@ -453,6 +463,7 @@
               userRole === "participant"
             ) {
               costTab.style.display = "inline-block";
+              updateNavTabsClass();
             } else {
               costTab.style.display = "none !important";
               costTab.remove();
